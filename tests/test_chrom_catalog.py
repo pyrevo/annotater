@@ -136,15 +136,17 @@ def test_species_and_assembly_counts():
 
 
 def test_existing_assemblies_keep_ids_and_registry_bytes():
-    ids = [i.assembly_id for i in CATALOG]
-    assert all(a in ids for a in SIX)
+    names = {n for i in CATALOG for n in i.names}
+    assert all(a in names for a in SIX)
     assert [e["assembly_id"] for e in MANIFEST["assemblies"][:6]] == SIX
     for assembly, sha in SIX_SHA256.items():
         data = (PACKAGE / f"data/{assembly}.tsv").read_bytes()
         assert hashlib.sha256(data).hexdigest() == sha, assembly
 
 
-def test_runtime_ids_are_the_six_legacy_ids_or_the_ucsc_db_id():
+def test_registry_keys_are_the_six_legacy_ids_or_the_ucsc_db_id():
+    # ``assembly_id`` in the manifest is the registry's build key (and the
+    # namespace of its internal seq ids), not the public identity.
     for entry in MANIFEST["assemblies"]:
         if entry["assembly_id"] not in SIX:
             assert entry["assembly_id"] == entry["ucsc_db"]
@@ -171,8 +173,9 @@ def test_runtime_catalog_is_derived_from_the_manifest_and_deterministic():
 
 def test_catalog_json_carries_only_runtime_fields():
     first = json.loads((PACKAGE / "catalog.json").read_text())["assemblies"][0]
-    assert set(first) == {"assembly_id", "ucsc_db", "label", "organism",
-                          "scientific_name", "description", "registry_file"}
+    assert set(first) == {"canonical_id", "ucsc_db", "aliases",
+                          "display_label", "organism", "scientific_name",
+                          "description", "registry_file"}
 
 
 def test_catalog_is_in_presentation_order():
@@ -183,13 +186,13 @@ def test_catalog_is_in_presentation_order():
 
 
 def test_labels_are_unique_clean_and_searchable_by_db_id():
-    labels = [i.label for i in CATALOG]
+    labels = [i.display_label for i in CATALOG]
     assert len(labels) == len(set(labels))
     for info in CATALOG:
-        assert info.label == " ".join(info.label.split())     # no stray spaces
-        assert " — " in info.label
-        assert info.ucsc_db in info.label                     # searchable
-        assert info.organism.strip() in info.label
+        assert info.display_label == " ".join(info.display_label.split())     # no stray spaces
+        assert " — " in info.display_label
+        assert info.ucsc_db in info.display_label                     # searchable
+        assert info.organism.strip() in info.display_label
 
 
 def test_duplicate_labels_are_rejected():
@@ -211,7 +214,7 @@ def test_label_construction():
 def test_option_labels_map_back_to_exactly_one_assembly():
     options = assembly_options()
     assert len(options) == len(CATALOG) == len(set(options.values()))
-    assert list(options.values()) == [i.assembly_id for i in CATALOG]
+    assert list(options.values()) == [i.canonical_id for i in CATALOG]
 
 
 # ---- generation (drift gate, determinism) -------------------------------------
@@ -318,12 +321,12 @@ def test_release_facts_are_recorded_for_the_documentation():
 
 # ---- runtime smoke over the whole bundle ---------------------------------------
 
-@pytest.mark.parametrize("info", CATALOG, ids=lambda i: i.assembly_id)
+@pytest.mark.parametrize("info", CATALOG, ids=lambda i: i.canonical_id)
 def test_bundled_registry_loads_and_resolves_a_representative_alias(info):
-    registry = load_registry(info.assembly_id)
+    registry = load_registry(info.canonical_id)
     expected = AUDIT[info.ucsc_db]["sequence_records"]
     assert len(registry) == expected > 0
-    assert registry.assembly_id == info.assembly_id
+    assert registry.assembly_id == info.canonical_id
     # deterministic representative taken from the registry itself
     seq_id = min(registry)
     record = registry.record(seq_id)
@@ -336,7 +339,7 @@ def test_bundled_registry_loads_and_resolves_a_representative_alias(info):
 
 def test_registries_are_isolated_between_assemblies():
     a, b = load_registry("mm10"), load_registry("canFam3")
-    assert a is not b and a.assembly_id != b.assembly_id
+    assert a is not b and a.assembly_id == "GRCm38" != b.assembly_id
     # the same string means different sequences (or nothing) per assembly
     assert not b.resolve("CM000994.2").resolved       # mouse chr1 GenBank
     assert a.resolve("CM000994.2").resolved

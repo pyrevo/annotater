@@ -66,7 +66,7 @@ def test_load_is_cached_and_independent_of_cwd(tmp_path, monkeypatch):
     assert fresh is not first and len(fresh) == len(first)
 
 
-@pytest.mark.parametrize("name", ["hg38", "grch38", "GRCh37", "HG19", "", "x"])
+@pytest.mark.parametrize("name", ["HG38", "grch38", "GRCh37", "HG19", "", "x"])
 def test_unsupported_assembly_fails_clearly_without_fallback(name):
     with pytest.raises(UnsupportedAssemblyError, match="GRCh38.*hg19"):
         load_registry(name)
@@ -331,10 +331,10 @@ def test_built_wheel_contains_runtime_registry_and_works(tmp_path):
         names = set(zf.namelist())
         zf.extractall(tmp_path / "site")
     from streamlit_app.core.chrom_registry import load_catalog
-    assemblies = [i.assembly_id for i in load_catalog()]
-    assert len(assemblies) == 64
-    for required in ("catalog.json", "catalog.py", "loader.py", "__init__.py",
-                     *(f"data/{a}.tsv" for a in assemblies)):
+    registry_files = [i.registry_file for i in load_catalog()]
+    assert len(registry_files) == 64
+    for required in ("catalog.json", "catalog.py", "loader.py", "source.py",
+                     "custom.py", "__init__.py", *registry_files):
         assert prefix + required in names, required
     # Build-only inputs stay in the source tree and out of the runtime wheel.
     assert not [n for n in names if n.startswith(prefix + "upstream/")]

@@ -225,7 +225,7 @@ def test_the_app_normalizes_once_and_both_engines_receive_the_same_tables(
         assert not at.exception
 
     assert len(calls) == 2                       # one normalization per run
-    assert [c["assembly"] for c in calls] == ["hg19", "hg19"]
+    assert [c["registry"].assembly_id for c in calls] == ["hg19", "hg19"]
     assert [c["target"] for c in calls] == ["ensembl", "ensembl"]
     assert [r[0] for r in received] == ["BedtoolsEngine", "PolarsBioEngine"]
     (_, bq, ba), (_, pq, pa) = received

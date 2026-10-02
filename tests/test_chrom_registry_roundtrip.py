@@ -18,7 +18,7 @@ from streamlit_app.core.chrom_registry import AUTHORITIES, load_catalog, load_re
 # Deep set (dataframe-level properties) and the whole bundled catalog
 # (registry-level round trip).
 ASSEMBLIES = ["GRCh38", "hg19", "GRCm39", "dm6", "GRCz11", "rn7"]
-BUNDLED = [i.assembly_id for i in load_catalog()]
+BUNDLED = [i.canonical_id for i in load_catalog()]
 
 
 @pytest.mark.parametrize("assembly", BUNDLED)

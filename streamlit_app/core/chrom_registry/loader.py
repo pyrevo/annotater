@@ -196,18 +196,42 @@ def _read_resource(name: str) -> str:
     )
 
 
-@cache
-def load_registry(assembly: str) -> ChromosomeRegistry:
-    """Load the packaged registry for ``assembly`` (exact id, no fallback)."""
-    from .catalog import load_catalog
+def canonical_assembly_id(assembly: str) -> str:
+    """The canonical bundled id for a canonical id or any accepted alias.
 
-    catalog = load_catalog()
-    for info in catalog:
-        if info.assembly_id == assembly:
-            return ChromosomeRegistry.from_tsv(
-                assembly, _read_resource(info.registry_file)
-            )
-    raise UnsupportedAssemblyError(
-        f"no chromosome registry for assembly {assembly!r}; supported: "
-        f"{sorted((i.assembly_id for i in catalog), key=str.casefold)}"
-    )
+    Matching is exact and case-sensitive; an unknown name is an error (no
+    fallback, no guessing).
+    """
+    from .catalog import find_assembly, load_catalog
+
+    info = find_assembly(assembly)
+    if info is None:
+        raise UnsupportedAssemblyError(
+            f"no chromosome registry for assembly {assembly!r}; supported: "
+            f"{sorted((i.canonical_id for i in load_catalog()), key=str.casefold)}"
+        )
+    return info.canonical_id
+
+
+def load_registry(assembly: str) -> ChromosomeRegistry:
+    """Load the packaged registry for a canonical id or accepted alias.
+
+    The result always carries the canonical id, whatever spelling was used,
+    and is the same object for every spelling.
+    """
+    return _load_bundled(canonical_assembly_id(assembly))
+
+
+@cache
+def _load_bundled(canonical_id: str) -> ChromosomeRegistry:
+    from .catalog import find_assembly
+
+    info = find_assembly(canonical_id)
+    return ChromosomeRegistry.from_tsv(
+        canonical_id, _read_resource(info.registry_file))
+
+
+# ``load_registry`` keeps the cache-control interface of the cache that backs
+# it (one entry per canonical id, whatever spelling was requested).
+load_registry.cache_clear = _load_bundled.cache_clear
+load_registry.cache_info = _load_bundled.cache_info

@@ -17,6 +17,7 @@ from streamlit_app.streamlit_app import (
     _ASSEMBLY_LABELS,
     _ASSEMBLY_OPTIONS,
     _ASSEMBLY_PLACEHOLDER,
+    _CUSTOM_OPTION,
 )
 from tests.test_f10_chromosome_messaging import (
     ANNOT_UCSC,
@@ -41,8 +42,9 @@ GFF = (b"##gff-version 3\n"
 def test_options_are_the_placeholder_then_every_catalog_assembly_once():
     at = _upload(COORD_UCSC, ANNOT_UCSC)
     options = list(_widget(at, "selectbox", "chr_assembly").options)
-    assert options == [_ASSEMBLY_PLACEHOLDER, *(i.label for i in CATALOG)]
-    assert len(options) == len(set(options)) == 65
+    assert options == [_ASSEMBLY_PLACEHOLDER, _CUSTOM_OPTION,
+                       *(i.display_label for i in CATALOG)]
+    assert len(options) == len(set(options)) == 66
 
 
 def test_every_option_maps_back_to_exactly_one_runtime_assembly():
@@ -52,7 +54,7 @@ def test_every_option_maps_back_to_exactly_one_runtime_assembly():
     assert {_ASSEMBLY_LABELS[v]: v for v in _ASSEMBLY_OPTIONS.values()} == \
         _ASSEMBLY_OPTIONS
     for info in CATALOG:
-        assert _ASSEMBLY_OPTIONS[info.label] == info.assembly_id
+        assert _ASSEMBLY_OPTIONS[info.display_label] == info.canonical_id
 
 
 def test_nothing_is_preselected_and_only_one_assembly_control_exists():
@@ -86,8 +88,8 @@ def test_users_can_find_assemblies_by_the_terms_they_type():
 
 def test_every_assembly_is_findable_by_its_ucsc_db_id_and_organism():
     for info in CATALOG:
-        assert info.label in _search(info.ucsc_db)
-        assert info.label in _search(info.organism.strip())
+        assert info.display_label in _search(info.ucsc_db)
+        assert info.display_label in _search(info.organism.strip())
 
 
 def test_scientific_name_is_shown_for_the_selected_assembly():
@@ -153,4 +155,4 @@ def test_a_normalizing_run_loads_only_the_selected_registry():
     _go(b"NC_000067.6\t100\t200\tq1\n", GFF % b"chr1",
         assembly=MM10, naming=UCSC)
     assert load_registry.cache_info().currsize == 1
-    assert _ASSEMBLY_INFO["mm10"].ucsc_db == "mm10"
+    assert _ASSEMBLY_INFO["GRCm38"].ucsc_db == "mm10"

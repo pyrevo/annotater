@@ -86,7 +86,7 @@ def test_assembly_is_mandatory_and_never_defaulted(assembly):
                               target="ensembl")
 
 
-@pytest.mark.parametrize("assembly", ["hg38", "grch38", "GRCh38 ", "mm39"])
+@pytest.mark.parametrize("assembly", ["HG38", "grch38", "GRCh38 ", "mm9"])
 def test_unsupported_assembly_uses_registry_error(assembly):
     with pytest.raises(UnsupportedAssemblyError):
         normalize_chromosomes(frame(["chr1"]), assembly=assembly,

@@ -45,8 +45,8 @@ def aliases(reg, alias):
 def test_configured_assemblies_and_ids_are_explicit():
     ids = [e["assembly_id"] for e in builder.load_sources()["assemblies"]]
     assert ids[:6] == ALL
-    for name in ("mm39", "grcm39", "GRCM39", "Mouse", "Drosophila", "danRer11",
-                 "mRatBN7.2", "GRCr8", "BDGP6", "dm3", "mm9", "rn6"):
+    for name in ("grcm39", "GRCM39", "Mouse", "Drosophila", "Danrer11",
+                 "mratbn7.2", "GRCr8", "BDGP6", "dm3", "mm9", "rn6"):
         with pytest.raises(UnsupportedAssemblyError):
             load_registry(name)
 
@@ -78,8 +78,9 @@ def test_only_rn7_among_new_assemblies_uses_ensembl_evidence():
 
 
 def test_record_counts_and_wide_schema_lossless(reg):
-    assert len(reg) == COUNTS[reg.assembly_id]
-    entry = builder.get_assembly(builder.load_sources(), reg.assembly_id)
+    key = {"mRatBN7.2": "rn7"}.get(reg.assembly_id, reg.assembly_id)
+    assert len(reg) == COUNTS[key]
+    entry = builder.get_assembly(builder.load_sources(), key)
     rows = builder.parse_alias_table(
         (builder.PACKAGE_DIR / entry["upstream_file"]).read_bytes())
     # Every upstream (alias, sequence) pair is resolvable; none dropped.

@@ -104,7 +104,7 @@ def test_assembly_and_target_are_explicit_and_never_defaulted():
         with pytest.raises(ChromosomeNormalizationError):
             run(["chr1"], ["chr1"], assembly=bad)
     with pytest.raises(UnsupportedAssemblyError):
-        run(["chr1"], ["chr1"], assembly="hg38")
+        run(["chr1"], ["chr1"], assembly="HG38")
     with pytest.raises(UnsupportedAuthorityError):
         run(["chr1"], ["chr1"], target="UCSC")
 

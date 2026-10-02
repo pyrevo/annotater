@@ -31,6 +31,7 @@ import streamlit as st
 
 from streamlit_app.config import Settings
 from streamlit_app.core import (
+    CanonicalSchemaError,
     CustomParser,
     FormatDetector,
     canonicalize_annotation_result,
@@ -38,14 +39,16 @@ from streamlit_app.core import (
     extension_authoritative_for,
     normalize_intervals,
     parse_and_normalize,
-    CanonicalSchemaError,
 )
-from streamlit_app.core.chrom_registry import assembly_options, load_catalog
+from streamlit_app.core.chrom_registry import (
+    DEFAULT_MAX_BYTES,
+    DEFAULT_MAX_ROWS,
+    CustomRegistryError,
+    assembly_options,
+    load_catalog,
+    resolve_registry_source,
+)
 from streamlit_app.core.chromosome_inputs import normalize_input_chromosomes
-from streamlit_app.core.vcf_contigs import (
-    ChromosomeContigCollisionError,
-    reconcile_contig_lines,
-)
 from streamlit_app.core.engine_registry import (
     DEFAULT_ENGINE,
     ENGINE_OPTIONS,
@@ -54,6 +57,10 @@ from streamlit_app.core.engine_registry import (
     engine_available,
     engine_label,
     unavailable_message,
+)
+from streamlit_app.core.vcf_contigs import (
+    ChromosomeContigCollisionError,
+    reconcile_contig_lines,
 )
 from streamlit_app.utils import (
     DataValidator,
@@ -126,7 +133,28 @@ _COORD_SYSTEM_OPTIONS = [
 _ASSEMBLY_PLACEHOLDER = "Select genome assembly"
 _ASSEMBLY_OPTIONS = assembly_options()
 _ASSEMBLY_LABELS = {v: k for k, v in _ASSEMBLY_OPTIONS.items()}
-_ASSEMBLY_INFO = {info.assembly_id: info for info in load_catalog()}
+_ASSEMBLY_INFO = {info.canonical_id: info for info in load_catalog()}
+
+# The one alternative to a bundled assembly: the user's own chromosome
+# mapping. It is a source of chromosome identity, not an assembly.
+_CUSTOM_OPTION = "Custom chromosome mapping\u2026"
+_CUSTOM_MAPPING_HELP = (
+    "One row per sequence; the columns are alternative naming systems "
+    "(tab-separated, header `assembly ucsc ensembl genbank refseq`). Empty "
+    "cells are allowed, but each row needs at least one name. Names are "
+    "matched exactly, including capitals. AnnotateR checks that the file is "
+    "structurally unambiguous; it does not verify that the names are "
+    "biologically correct. Limits: "
+    f"{DEFAULT_MAX_ROWS:,} sequences, {DEFAULT_MAX_BYTES // 2**20} MiB."
+)
+_MAPPING_REQUIRED_MESSAGE = (
+    "Upload a chromosome mapping file before normalizing chromosome names."
+)
+_MAPPING_INVALID_MESSAGE = (
+    "The chromosome mapping file is not valid, so chromosome names cannot "
+    "be normalized. Correct the file and upload it again."
+)
+_MAPPING_LOADED_KEY = "chr_mapping_loaded"
 
 # Chromosome naming choices: display label -> naming system (None = keep
 # the names exactly as provided).
@@ -223,6 +251,71 @@ def _clear_results_state():
         st.session_state.pop(key, None)
 
 
+def _chr_source_identity(cfg: dict):
+    if cfg["chr_custom"]:
+        return ("custom", cfg["chr_mapping_digest"])
+    return ("assembly", cfg["chr_assembly"])
+
+
+def _custom_registry(data: bytes, digest: str):
+    """``(registry, error)`` of a custom mapping, parsed once per content.
+
+    The outcome lives in this session's state only (never a global cache,
+    never on disk) and is dropped as soon as the mapping is not in use.
+    """
+    cached = st.session_state.get(_MAPPING_LOADED_KEY)
+    if cached is not None and cached[0] == digest:
+        return cached[1], cached[2]
+    try:
+        registry, error = resolve_registry_source(mapping=data), None
+    except CustomRegistryError as exc:
+        registry, error = None, exc
+    st.session_state[_MAPPING_LOADED_KEY] = (digest, registry, error)
+    return registry, error
+
+
+def _mapping_loaded_caption(registry) -> str:
+    n = len(registry)
+    return f"Loaded {n:,} sequence mapping{'' if n == 1 else 's'}"
+
+
+def _show_mapping_error(error: CustomRegistryError):
+    """Plain-text validation report; file content is never rendered as
+    markdown or HTML."""
+    st.error(_MAPPING_INVALID_MESSAGE)
+    lines = []
+    for issue in error.issues:
+        where = f"line {', '.join(map(str, issue.rows))}" if issue.rows else "file"
+        if issue.columns:
+            where += f" [{', '.join(dict.fromkeys(issue.columns))}]"
+        lines.append(f"{where}: {issue.code}: {issue.message}")
+    if error.more:
+        lines.append(f"... and {error.more} more problem(s)")
+    st.code("\n".join(lines), language=None, wrap_lines=True)
+
+
+def _registry_for_run(cfg: dict):
+    """The one registry the run normalizes with, or ``None`` after showing
+    why the run cannot proceed. This is the only place where a bundled
+    assembly and a custom mapping differ; everything after it takes a
+    ``ChromosomeRegistry``."""
+    if cfg["chr_custom"]:
+        if cfg["chr_mapping"] is None:
+            st.error(_MAPPING_REQUIRED_MESSAGE)
+            return None
+        registry, error = _custom_registry(
+            cfg["chr_mapping"], cfg["chr_mapping_digest"])
+        if error is not None:
+            # The problems themselves are listed beside the upload.
+            st.error(_MAPPING_INVALID_MESSAGE)
+            return None
+        return registry
+    if cfg["chr_assembly"] is None:
+        st.error(_ASSEMBLY_REQUIRED_MESSAGE)
+        return None
+    return resolve_registry_source(assembly=cfg["chr_assembly"])
+
+
 def _config_signature(cfg: dict, coord_identity, annot_identity, coord_format):
     """
     Signature of every semantics-affecting input of one run.
@@ -242,8 +335,10 @@ def _config_signature(cfg: dict, coord_identity, annot_identity, coord_format):
         cfg["coord_system"],
         cfg["annot_system"],
         cfg["chr_naming"],
-        # The assembly only matters when names are actually normalized.
-        cfg["chr_assembly"] if cfg["chr_naming"] else None,
+        # The chromosome source only matters when names are actually
+        # normalized. A custom mapping is identified by its content, never
+        # by its file name.
+        _chr_source_identity(cfg) if cfg["chr_naming"] else None,
         tuple(cfg["feature_types"]),
         coord_identity,
         annot_identity,
@@ -482,17 +577,30 @@ def render_sidebar() -> dict:
         )
         chr_assembly_label = st.selectbox(
             "Genome assembly",
-            [_ASSEMBLY_PLACEHOLDER, *_ASSEMBLY_OPTIONS],
+            [_ASSEMBLY_PLACEHOLDER, _CUSTOM_OPTION, *_ASSEMBLY_OPTIONS],
             key="chr_assembly",
             help=(
                 "Chromosome names can refer to different sequences in "
                 "different genome assemblies. Select the assembly used by "
                 "your input files so AnnotateR can normalize names safely. "
                 "Click the list and type to search by species, assembly or "
-                "UCSC name (for example human, mm10, canFam3). Not needed "
-                "when names are kept as they are."
+                "UCSC name (for example human, mm10, canFam3). Choose "
+                "\u201cCustom chromosome mapping\u2026\u201d to supply your "
+                "own table of sequence names instead. Not needed when "
+                "names are kept as they are."
             ),
         )
+        chr_custom = chr_assembly_label == _CUSTOM_OPTION
+        chr_mapping = None
+        if chr_custom:
+            uploaded_mapping = st.file_uploader(
+                "Chromosome mapping file",
+                type=["tsv"],
+                key="chr_mapping_file",
+                help=_CUSTOM_MAPPING_HELP,
+            )
+            if uploaded_mapping is not None:
+                chr_mapping = uploaded_mapping.getvalue()
         chr_naming_label = st.selectbox(
             "Chromosome naming",
             list(_NAMING_OPTIONS),
@@ -503,14 +611,31 @@ def render_sidebar() -> dict:
             ),
         )
         chr_assembly = _ASSEMBLY_OPTIONS.get(chr_assembly_label)
+        chr_mapping_digest = (
+            hashlib.sha256(chr_mapping).hexdigest()
+            if chr_mapping is not None else None)
         if chr_assembly is not None:
             info = _ASSEMBLY_INFO[chr_assembly]
             st.caption(" \u00b7 ".join(
                 part for part in (info.scientific_name,
                                   f"UCSC {info.ucsc_db}") if part))
         chr_naming = _NAMING_OPTIONS[chr_naming_label]
-        if chr_naming is not None and chr_assembly is None:
+        if chr_naming is not None and chr_custom:
+            if chr_mapping is None:
+                st.warning(_MAPPING_REQUIRED_MESSAGE)
+            else:
+                # Parsed only because names will be normalized, and once
+                # per distinct content (session-scoped, see below).
+                mapping_registry, mapping_error = _custom_registry(
+                    chr_mapping, chr_mapping_digest)
+                if mapping_error is not None:
+                    _show_mapping_error(mapping_error)
+                else:
+                    st.caption(_mapping_loaded_caption(mapping_registry))
+        elif chr_naming is not None and chr_assembly is None:
             st.warning(_ASSEMBLY_REQUIRED_MESSAGE)
+        if not (chr_custom and chr_naming is not None):
+            st.session_state.pop(_MAPPING_LOADED_KEY, None)
 
         # --- Advanced options (collapsed by default) -----------------
         # The strand checkbox applies to all operation modes and a nonzero
@@ -569,6 +694,9 @@ def render_sidebar() -> dict:
         "coord_system": coord_system,
         "annot_system": annot_system,
         "chr_assembly": chr_assembly,
+        "chr_custom": chr_custom,
+        "chr_mapping": chr_mapping,
+        "chr_mapping_digest": chr_mapping_digest,
         "chr_naming": chr_naming,
         "mode": mode,
         "join": join,
@@ -806,18 +934,24 @@ def run_annotation(cfg: dict, coord_df, annot_info, signature):
     chr_summary = None
     contig_renames = {}
     if cfg["chr_naming"] is not None:
-        if cfg["chr_assembly"] is None:
-            st.error(_ASSEMBLY_REQUIRED_MESSAGE)
+        registry = _registry_for_run(cfg)
+        if registry is None:
             return
         normalized = normalize_input_chromosomes(
-            coord_df, annot_df,
-            assembly=cfg["chr_assembly"], target=cfg["chr_naming"],
+            coord_df, annot_df, registry=registry, target=cfg["chr_naming"],
         )
         coord_df, annot_df = normalized.coord_df, normalized.annot_df
         # Renames come from the normalization report, never re-derived.
         contig_renames = dict(normalized.coord_renames)
         chr_summary = {
-            "assembly_label": _ASSEMBLY_LABELS[cfg["chr_assembly"]],
+            # The genome assembly's label for a bundled registry; None for
+            # a custom mapping, which has no assembly identity.
+            "assembly_label": (
+                _ASSEMBLY_LABELS[registry.assembly_id]
+                if registry.assembly_id is not None else None),
+            "source_label": (
+                _ASSEMBLY_LABELS[registry.assembly_id]
+                if registry.assembly_id is not None else registry.name),
             "naming_label": _NAMING_LABELS[cfg["chr_naming"]],
             "coord_report": normalized.coord_report,
             "annot_report": normalized.annot_report,
@@ -1028,11 +1162,17 @@ def _render_chromosome_report(summary):
         return
     tables = (("Query", summary["coord_report"]),
               ("Annotation", summary["annot_report"]))
-    st.caption(
-        f"Chromosome naming: {summary['naming_label']} \u00b7 Genome "
-        f"assembly: {summary['assembly_label']}. Coordinates and genome "
-        "assembly are unchanged."
-    )
+    if summary["assembly_label"] is not None:
+        st.caption(
+            f"Chromosome naming: {summary['naming_label']} \u00b7 Genome "
+            f"assembly: {summary['assembly_label']}. Coordinates and genome "
+            "assembly are unchanged."
+        )
+    else:
+        st.caption(
+            f"Chromosome naming: {summary['naming_label']} \u00b7 "
+            f"{summary['source_label']}. Coordinates are unchanged."
+        )
     for label, report in tables:
         st.caption(_table_summary(label, report))
     unresolved = any(r.unresolved_identifiers for _, r in tables)
@@ -1056,7 +1196,7 @@ def _render_chromosome_report(summary):
             st.markdown(f"**{label}**")
             if report.unknown:
                 st.markdown(
-                    f"Not recognized in {summary['assembly_label']}: "
+                    f"Not recognized in {summary['source_label']}: "
                     + _name_list(report.unknown)
                 )
             if report.no_alias_for_target:

@@ -11,6 +11,7 @@ helpers are not used, so a bug shared by builder and loader cannot hide here.
 from __future__ import annotations
 
 import re
+from pathlib import Path
 
 import pytest
 
@@ -33,7 +34,9 @@ def _registry_rows(assembly):
 def test_every_bundled_assembly_is_covered_and_evidence_is_unchanged():
     """The oracle runs over the whole bundled catalog, not a hand list."""
     from streamlit_app.core.chrom_registry import load_catalog
-    assert set(ASSEMBLIES) == {i.assembly_id for i in load_catalog()}
+    # the oracle is keyed by the registry key (the manifest's assembly_id)
+    assert set(ASSEMBLIES) == {Path(i.registry_file).stem
+                               for i in load_catalog()}
     assert ASSEMBLIES[:6] == ["GRCh38", "hg19", "GRCm39", "dm6", "GRCz11",
                               "rn7"]
     assert len(ASSEMBLIES) == 64

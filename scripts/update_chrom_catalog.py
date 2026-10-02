@@ -34,6 +34,11 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from streamlit_app.core.chrom_registry import builder
+from streamlit_app.core.chrom_registry.catalog import (
+    SCHEMA_VERSION,
+    AssemblyInfo,
+    identity_problems,
+)
 
 PACKAGE = builder.PACKAGE_DIR
 SOURCE_FORMAT = "ucsc-chromAlias-table: alias<TAB>chrom<TAB>source"
@@ -95,27 +100,64 @@ def sort_key(info: dict):
             info["scientific_name"] or "", info["ucsc_db"])
 
 
+BASIS_DB = "ucsc-db"
+BASIS_TOKEN = "ucsc-description-token"
+
+
+def canonical_identity(entry: dict, policy: dict) -> tuple[str, str]:
+    """``(canonical_id, basis)`` of a manifest entry under the policy.
+
+    The canonical id is the UCSC database id unless the reviewed
+    ``canonical_id_overrides`` names a published assembly name for it. An
+    override is accepted only when UCSC's own description contains it
+    verbatim as the ``(<name>/<db>)`` token, so a name is never invented
+    and no prose is parsed.
+    """
+    db = entry["ucsc_db"]
+    name = policy.get("canonical_id_overrides", {}).get(db)
+    if name is None:
+        return db, BASIS_DB
+    description = entry["catalog"]["description"] or ""
+    if f"({name}/{db})" not in description:
+        raise ValueError(
+            f"{db}: canonical id {name!r} is not the '({name}/{db})' token "
+            f"of the UCSC description {description!r}")
+    return name, BASIS_TOKEN
+
+
+def accepted_aliases(entry: dict, canonical_id: str) -> list[str]:
+    """Other accepted names: the UCSC db and the previous runtime id."""
+    return sorted({entry["ucsc_db"], entry["assembly_id"]} - {canonical_id})
+
+
 def build_catalog(manifest: dict) -> dict:
     """``catalog.json`` content derived from the manifest (deterministic)."""
+    policy = manifest["bundle_policy"]
     infos = []
     for entry in manifest["assemblies"]:
         meta = entry["catalog"]
+        canonical_id, _ = canonical_identity(entry, policy)
         infos.append({
-            "assembly_id": entry["assembly_id"],
+            "canonical_id": canonical_id,
             "ucsc_db": entry["ucsc_db"],
-            "label": make_label(meta["organism"], meta["description"],
-                                entry["ucsc_db"]),
+            "aliases": accepted_aliases(entry, canonical_id),
+            "display_label": make_label(meta["organism"], meta["description"],
+                                        entry["ucsc_db"]),
             "organism": meta["organism"],
             "scientific_name": meta["scientific_name"],
             "description": meta["description"],
             "registry_file": entry["registry_file"],
         })
     infos.sort(key=sort_key)
-    labels = [i["label"] for i in infos]
+    labels = [i["display_label"] for i in infos]
     duplicated = sorted({label for label in labels if labels.count(label) > 1})
     if duplicated:
         raise ValueError(f"duplicate display labels: {duplicated}")
-    return {"schema_version": 1, "assemblies": infos}
+    problems = identity_problems(
+        [AssemblyInfo(**{**i, "aliases": tuple(i["aliases"])}) for i in infos])
+    if problems:
+        raise ValueError(f"assembly identity errors: {problems}")
+    return {"schema_version": SCHEMA_VERSION, "assemblies": infos}
 
 
 def dump(obj) -> str:
@@ -148,9 +190,10 @@ def audit_block(audit_entry: dict, report: dict) -> dict:
     }
 
 
-def new_entry(audit_entry: dict, report: dict, last_modified: str) -> dict:
+def new_entry(audit_entry: dict, report: dict, last_modified: str,
+              policy: dict | None = None) -> dict:
     db = audit_entry["db"]
-    return {
+    entry = {
         "assembly_id": db,
         "ucsc_db": db,
         "source_url": audit_entry["alias_url"],
@@ -164,14 +207,24 @@ def new_entry(audit_entry: dict, report: dict, last_modified: str) -> dict:
         "catalog": catalog_block(audit_entry),
         "audit": audit_block(audit_entry, report),
     }
+    return with_identity(entry, policy or {})
 
 
-def annotate_existing(entry: dict, audit_entry: dict, report: dict) -> dict:
+def with_identity(entry: dict, policy: dict) -> dict:
+    """``entry`` with its canonical id and the basis it rests on."""
+    entry = dict(entry)
+    entry["canonical_id"], entry["canonical_id_basis"] = canonical_identity(
+        entry, policy)
+    return entry
+
+
+def annotate_existing(entry: dict, audit_entry: dict, report: dict,
+                      policy: dict | None = None) -> dict:
     """Existing reviewed entries keep every field; metadata blocks are added."""
     entry = dict(entry)
     entry["catalog"] = catalog_block(audit_entry)
     entry["audit"] = audit_block(audit_entry, report)
-    return entry
+    return with_identity(entry, policy or {})
 
 
 def bundle_facts(manifest: dict, report: dict) -> dict:
@@ -202,7 +255,7 @@ def bundle_facts(manifest: dict, report: dict) -> dict:
             "reviewed_exceptions": sorted(
                 a["db"] for a in bundled if a["status"] != "PASS"),
             "ucsc_dbs": sorted(dbs),
-            "assembly_ids": [e["assembly_id"] for e in manifest["assemblies"]],
+            "canonical_ids": [e["canonical_id"] for e in manifest["assemblies"]],
             "tsv_bytes_estimate": sum(a["estimated_tsv_bytes"]
                                       for a in bundled),
         },
@@ -271,6 +324,16 @@ def check(root: Path = ROOT, package: Path = PACKAGE) -> list[str]:
             problems.append(f"{db}: catalog metadata differs from the audit")
         if entry.get("audit") != audit_block(audit_entry, report):
             problems.append(f"{db}: audit provenance differs from the snapshot")
+        try:
+            identity = canonical_identity(entry, policy)
+        except ValueError as exc:
+            problems.append(str(exc))
+        else:
+            if (entry.get("canonical_id"),
+                    entry.get("canonical_id_basis")) != identity:
+                problems.append(
+                    f"{db}: canonical id {entry.get('canonical_id')!r} "
+                    f"differs from the policy ({identity[0]!r})")
         if entry["sha256"] != audit_entry["source_sha256"]:
             problems.append(f"{db}: pinned checksum differs from the audit")
         try:
@@ -320,14 +383,14 @@ def write(cache_dir: Path, fetch=None, root: Path = ROOT,
             continue
         modified = json.loads(cache.meta_path(db).read_text()).get(
             "last_modified", "")
-        entry = new_entry(audit_entry, report, modified)
+        entry = new_entry(audit_entry, report, modified, policy)
         (package / entry["upstream_file"]).write_bytes(cached[1])
         imported.append(entry)
     for db, problems in drifted:
         print(f"DRIFT {db}: {'; '.join(problems)}", file=out)
     audited = {a["db"]: a for a in select_bundle(report, policy)}
     # Existing entries keep their position and fields; new ones follow by db.
-    entries = [annotate_existing(e, audited[e["ucsc_db"]], report)
+    entries = [annotate_existing(e, audited[e["ucsc_db"]], report, policy)
                for e in manifest["assemblies"] if e["ucsc_db"] in audited]
     entries += sorted(imported, key=lambda e: e["ucsc_db"])
     manifest["assemblies"] = entries

@@ -101,7 +101,8 @@ def test_controls_are_plain_language_with_no_preselected_assembly():
     assert options[0] == "Select genome assembly"
     # the catalog-driven list (details: tests/test_assembly_selector.py);
     # the six deeply validated assemblies are all offered and understandable
-    assert len(options) == 1 + 64
+    assert options[1] == "Custom chromosome mapping\u2026"
+    assert len(options) == 1 + 1 + 64
     for label in (GRCH38, HG19, "Mouse \u2014 Jun. 2020 (GRCm39/mm39)",
                   DM6, "Zebrafish \u2014 May 2017 (GRCz11/danRer11)",
                   "Rat \u2014 Nov. 2020 (mRatBN7.2/rn7)"):
@@ -123,7 +124,7 @@ def test_controls_are_plain_language_with_no_preselected_assembly():
 def test_every_supported_assembly_is_offered_and_nothing_else():
     from streamlit_app.core.chrom_registry import load_catalog
     from streamlit_app.streamlit_app import _ASSEMBLY_OPTIONS
-    configured = [i.assembly_id for i in load_catalog()]
+    configured = [i.canonical_id for i in load_catalog()]
     assert sorted(_ASSEMBLY_OPTIONS.values()) == sorted(configured)
 
 

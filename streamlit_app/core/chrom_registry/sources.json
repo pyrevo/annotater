@@ -10,7 +10,25 @@
       "hg19"
     ],
     "rationale": "Bundled = clean PASS assemblies with at most max_sequence_records sequences, plus assemblies already in production through a reviewed intervention (hg19: one reviewed source-label correction). REVIEW, FAIL and NO_SOURCE assemblies are never imported automatically.",
-    "facts_file": "audits/chrom_alias_catalog/bundle_facts.json"
+    "facts_file": "audits/chrom_alias_catalog/bundle_facts.json",
+    "canonical_id_overrides": {
+      "bosTau9": "ARS-UCD1.2",
+      "canFam4": "UU_Cfam_GSD_1.0",
+      "ce11": "WBcel235",
+      "danRer10": "GRCz10",
+      "danRer11": "GRCz11",
+      "equCab3": "EquCab3.0",
+      "felCat9": "Felis_catus_9.0",
+      "galGal6": "GRCg6a",
+      "hg38": "GRCh38",
+      "mm10": "GRCm38",
+      "mm39": "GRCm39",
+      "oviAri4": "Oar_v4.0",
+      "rheMac10": "Mmul_10",
+      "rn7": "mRatBN7.2",
+      "susScr11": "Sscrofa11.1"
+    },
+    "canonical_id_rationale": "canonical_id is the UCSC database id, except for the reviewed names in canonical_id_overrides. An override must equal, verbatim, the '(<name>/<db>)' token of the UCSC description of that database, so no name is invented and no prose is parsed. Descriptions whose token carries an institution or a version prefix (for example 'Broad CanFam3.1/canFam3' or 'BDGP Release 6 + ISO1 MT/dm6') or only an institution ('Broad/equCab2') are not overridden. hg19 stays hg19: UCSC's hg19 is GRCh37 with a different mitochondrial sequence (chrM), so the name GRCh37 would claim the wrong sequence set."
   },
   "assemblies": [
     {
@@ -41,7 +59,9 @@
         ],
         "sequence_records": 711,
         "alias_rows": 2129
-      }
+      },
+      "canonical_id": "GRCh38",
+      "canonical_id_basis": "ucsc-description-token"
     },
     {
       "assembly_id": "hg19",
@@ -107,7 +127,9 @@
         ],
         "sequence_records": 298,
         "alias_rows": 892
-      }
+      },
+      "canonical_id": "hg19",
+      "canonical_id_basis": "ucsc-db"
     },
     {
       "assembly_id": "GRCm39",
@@ -137,7 +159,9 @@
         ],
         "sequence_records": 61,
         "alias_rows": 183
-      }
+      },
+      "canonical_id": "GRCm39",
+      "canonical_id_basis": "ucsc-description-token"
     },
     {
       "assembly_id": "dm6",
@@ -167,7 +191,9 @@
         ],
         "sequence_records": 1870,
         "alias_rows": 5609
-      }
+      },
+      "canonical_id": "dm6",
+      "canonical_id_basis": "ucsc-db"
     },
     {
       "assembly_id": "GRCz11",
@@ -197,7 +223,9 @@
         ],
         "sequence_records": 1923,
         "alias_rows": 3872
-      }
+      },
+      "canonical_id": "GRCz11",
+      "canonical_id_basis": "ucsc-description-token"
     },
     {
       "assembly_id": "rn7",
@@ -248,7 +276,9 @@
         ],
         "sequence_records": 176,
         "alias_rows": 528
-      }
+      },
+      "canonical_id": "mRatBN7.2",
+      "canonical_id_basis": "ucsc-description-token"
     },
     {
       "assembly_id": "anoCar2",
@@ -278,7 +308,9 @@
         ],
         "sequence_records": 6457,
         "alias_rows": 19378
-      }
+      },
+      "canonical_id": "anoCar2",
+      "canonical_id_basis": "ucsc-db"
     },
     {
       "assembly_id": "aquChr2",
@@ -308,7 +340,9 @@
         ],
         "sequence_records": 1141,
         "alias_rows": 2282
-      }
+      },
+      "canonical_id": "aquChr2",
+      "canonical_id_basis": "ucsc-db"
     },
     {
       "assembly_id": "bosTau6",
@@ -338,7 +372,9 @@
         ],
         "sequence_records": 3317,
         "alias_rows": 3317
-      }
+      },
+      "canonical_id": "bosTau6",
+      "canonical_id_basis": "ucsc-db"
     },
     {
       "assembly_id": "bosTau9",
@@ -368,7 +404,9 @@
         ],
         "sequence_records": 2211,
         "alias_rows": 4453
-      }
+      },
+      "canonical_id": "ARS-UCD1.2",
+      "canonical_id_basis": "ucsc-description-token"
     },
     {
       "assembly_id": "calJac4",
@@ -398,7 +436,9 @@
         ],
         "sequence_records": 964,
         "alias_rows": 2868
-      }
+      },
+      "canonical_id": "calJac4",
+      "canonical_id_basis": "ucsc-db"
     },
     {
       "assembly_id": "canFam3",
@@ -428,7 +468,9 @@
         ],
         "sequence_records": 3268,
         "alias_rows": 6575
-      }
+      },
+      "canonical_id": "canFam3",
+      "canonical_id_basis": "ucsc-db"
     },
     {
       "assembly_id": "canFam4",
@@ -458,7 +500,9 @@
         ],
         "sequence_records": 2198,
         "alias_rows": 2198
-      }
+      },
+      "canonical_id": "UU_Cfam_GSD_1.0",
+      "canonical_id_basis": "ucsc-description-token"
     },
     {
       "assembly_id": "canFam5",
@@ -488,7 +532,9 @@
         ],
         "sequence_records": 794,
         "alias_rows": 1548
-      }
+      },
+      "canonical_id": "canFam5",
+      "canonical_id_basis": "ucsc-db"
     },
     {
       "assembly_id": "canFam6",
@@ -518,7 +564,9 @@
         ],
         "sequence_records": 147,
         "alias_rows": 441
-      }
+      },
+      "canonical_id": "canFam6",
+      "canonical_id_basis": "ucsc-db"
     },
     {
       "assembly_id": "cavPor3",
@@ -548,7 +596,9 @@
         ],
         "sequence_records": 3144,
         "alias_rows": 6288
-      }
+      },
+      "canonical_id": "cavPor3",
+      "canonical_id_basis": "ucsc-db"
     },
     {
       "assembly_id": "ce11",
@@ -578,7 +628,9 @@
         ],
         "sequence_records": 7,
         "alias_rows": 14
-      }
+      },
+      "canonical_id": "WBcel235",
+      "canonical_id_basis": "ucsc-description-token"
     },
     {
       "assembly_id": "cerSim1",
@@ -608,7 +660,9 @@
         ],
         "sequence_records": 3087,
         "alias_rows": 6173
-      }
+      },
+      "canonical_id": "cerSim1",
+      "canonical_id_basis": "ucsc-db"
     },
     {
       "assembly_id": "chlSab2",
@@ -638,7 +692,9 @@
         ],
         "sequence_records": 2004,
         "alias_rows": 4008
-      }
+      },
+      "canonical_id": "chlSab2",
+      "canonical_id_basis": "ucsc-db"
     },
     {
       "assembly_id": "ci1",
@@ -668,7 +724,9 @@
         ],
         "sequence_records": 2501,
         "alias_rows": 2501
-      }
+      },
+      "canonical_id": "ci1",
+      "canonical_id_basis": "ucsc-db"
     },
     {
       "assembly_id": "ci3",
@@ -698,7 +756,9 @@
         ],
         "sequence_records": 1272,
         "alias_rows": 2559
-      }
+      },
+      "canonical_id": "ci3",
+      "canonical_id_basis": "ucsc-db"
     },
     {
       "assembly_id": "criGriChoV2",
@@ -728,7 +788,9 @@
         ],
         "sequence_records": 8265,
         "alias_rows": 16531
-      }
+      },
+      "canonical_id": "criGriChoV2",
+      "canonical_id_basis": "ucsc-db"
     },
     {
       "assembly_id": "danRer10",
@@ -758,7 +820,9 @@
         ],
         "sequence_records": 1061,
         "alias_rows": 2147
-      }
+      },
+      "canonical_id": "GRCz10",
+      "canonical_id_basis": "ucsc-description-token"
     },
     {
       "assembly_id": "danRer7",
@@ -788,7 +852,9 @@
         ],
         "sequence_records": 1133,
         "alias_rows": 1133
-      }
+      },
+      "canonical_id": "danRer7",
+      "canonical_id_basis": "ucsc-db"
     },
     {
       "assembly_id": "echTel2",
@@ -818,7 +884,9 @@
         ],
         "sequence_records": 8402,
         "alias_rows": 16803
-      }
+      },
+      "canonical_id": "echTel2",
+      "canonical_id_basis": "ucsc-db"
     },
     {
       "assembly_id": "equCab2",
@@ -848,7 +916,9 @@
         ],
         "sequence_records": 33,
         "alias_rows": 98
-      }
+      },
+      "canonical_id": "equCab2",
+      "canonical_id_basis": "ucsc-db"
     },
     {
       "assembly_id": "equCab3",
@@ -878,7 +948,9 @@
         ],
         "sequence_records": 4701,
         "alias_rows": 9435
-      }
+      },
+      "canonical_id": "EquCab3.0",
+      "canonical_id_basis": "ucsc-description-token"
     },
     {
       "assembly_id": "eriEur2",
@@ -908,7 +980,9 @@
         ],
         "sequence_records": 5803,
         "alias_rows": 11605
-      }
+      },
+      "canonical_id": "eriEur2",
+      "canonical_id_basis": "ucsc-db"
     },
     {
       "assembly_id": "felCat5",
@@ -938,7 +1012,9 @@
         ],
         "sequence_records": 5500,
         "alias_rows": 11018
-      }
+      },
+      "canonical_id": "felCat5",
+      "canonical_id_basis": "ucsc-db"
     },
     {
       "assembly_id": "felCat9",
@@ -968,7 +1044,9 @@
         ],
         "sequence_records": 4508,
         "alias_rows": 9036
-      }
+      },
+      "canonical_id": "Felis_catus_9.0",
+      "canonical_id_basis": "ucsc-description-token"
     },
     {
       "assembly_id": "fr2",
@@ -998,7 +1076,9 @@
         ],
         "sequence_records": 1,
         "alias_rows": 1
-      }
+      },
+      "canonical_id": "fr2",
+      "canonical_id_basis": "ucsc-db"
     },
     {
       "assembly_id": "fr3",
@@ -1028,7 +1108,9 @@
         ],
         "sequence_records": 6835,
         "alias_rows": 13693
-      }
+      },
+      "canonical_id": "fr3",
+      "canonical_id_basis": "ucsc-db"
     },
     {
       "assembly_id": "galGal6",
@@ -1058,7 +1140,9 @@
         ],
         "sequence_records": 464,
         "alias_rows": 963
-      }
+      },
+      "canonical_id": "GRCg6a",
+      "canonical_id_basis": "ucsc-description-token"
     },
     {
       "assembly_id": "gasAcu1",
@@ -1088,7 +1172,9 @@
         ],
         "sequence_records": 22,
         "alias_rows": 22
-      }
+      },
+      "canonical_id": "gasAcu1",
+      "canonical_id_basis": "ucsc-db"
     },
     {
       "assembly_id": "gorGor3",
@@ -1118,7 +1204,9 @@
         ],
         "sequence_records": 25,
         "alias_rows": 25
-      }
+      },
+      "canonical_id": "gorGor3",
+      "canonical_id_basis": "ucsc-db"
     },
     {
       "assembly_id": "gorGor6",
@@ -1148,7 +1236,9 @@
         ],
         "sequence_records": 5486,
         "alias_rows": 10972
-      }
+      },
+      "canonical_id": "gorGor6",
+      "canonical_id_basis": "ucsc-db"
     },
     {
       "assembly_id": "hetGla2",
@@ -1178,7 +1268,9 @@
         ],
         "sequence_records": 4229,
         "alias_rows": 8458
-      }
+      },
+      "canonical_id": "hetGla2",
+      "canonical_id_basis": "ucsc-db"
     },
     {
       "assembly_id": "loxAfr3",
@@ -1208,7 +1300,9 @@
         ],
         "sequence_records": 2353,
         "alias_rows": 4704
-      }
+      },
+      "canonical_id": "loxAfr3",
+      "canonical_id_basis": "ucsc-db"
     },
     {
       "assembly_id": "macFas5",
@@ -1238,7 +1332,9 @@
         ],
         "sequence_records": 7601,
         "alias_rows": 15224
-      }
+      },
+      "canonical_id": "macFas5",
+      "canonical_id_basis": "ucsc-db"
     },
     {
       "assembly_id": "melGal1",
@@ -1268,7 +1364,9 @@
         ],
         "sequence_records": 5890,
         "alias_rows": 11812
-      }
+      },
+      "canonical_id": "melGal1",
+      "canonical_id_basis": "ucsc-db"
     },
     {
       "assembly_id": "mm10",
@@ -1298,7 +1396,9 @@
         ],
         "sequence_records": 239,
         "alias_rows": 717
-      }
+      },
+      "canonical_id": "GRCm38",
+      "canonical_id_basis": "ucsc-description-token"
     },
     {
       "assembly_id": "monDom5",
@@ -1328,7 +1428,9 @@
         ],
         "sequence_records": 11,
         "alias_rows": 30
-      }
+      },
+      "canonical_id": "monDom5",
+      "canonical_id_basis": "ucsc-db"
     },
     {
       "assembly_id": "musFur1",
@@ -1358,7 +1460,9 @@
         ],
         "sequence_records": 7741,
         "alias_rows": 7741
-      }
+      },
+      "canonical_id": "musFur1",
+      "canonical_id_basis": "ucsc-db"
     },
     {
       "assembly_id": "neoSch1",
@@ -1388,7 +1492,9 @@
         ],
         "sequence_records": 7872,
         "alias_rows": 15744
-      }
+      },
+      "canonical_id": "neoSch1",
+      "canonical_id_basis": "ucsc-db"
     },
     {
       "assembly_id": "oreNil2",
@@ -1418,7 +1524,9 @@
         ],
         "sequence_records": 5678,
         "alias_rows": 11356
-      }
+      },
+      "canonical_id": "oreNil2",
+      "canonical_id_basis": "ucsc-db"
     },
     {
       "assembly_id": "oryCun2",
@@ -1448,7 +1556,9 @@
         ],
         "sequence_records": 3242,
         "alias_rows": 3242
-      }
+      },
+      "canonical_id": "oryCun2",
+      "canonical_id_basis": "ucsc-db"
     },
     {
       "assembly_id": "oryLat2",
@@ -1478,7 +1588,9 @@
         ],
         "sequence_records": 7189,
         "alias_rows": 7189
-      }
+      },
+      "canonical_id": "oryLat2",
+      "canonical_id_basis": "ucsc-db"
     },
     {
       "assembly_id": "otoGar3",
@@ -1508,7 +1620,9 @@
         ],
         "sequence_records": 7793,
         "alias_rows": 15586
-      }
+      },
+      "canonical_id": "otoGar3",
+      "canonical_id_basis": "ucsc-db"
     },
     {
       "assembly_id": "oviAri3",
@@ -1538,7 +1652,9 @@
         ],
         "sequence_records": 5698,
         "alias_rows": 11423
-      }
+      },
+      "canonical_id": "oviAri3",
+      "canonical_id_basis": "ucsc-db"
     },
     {
       "assembly_id": "oviAri4",
@@ -1568,7 +1684,9 @@
         ],
         "sequence_records": 5466,
         "alias_rows": 10932
-      }
+      },
+      "canonical_id": "Oar_v4.0",
+      "canonical_id_basis": "ucsc-description-token"
     },
     {
       "assembly_id": "ponAbe2",
@@ -1598,7 +1716,9 @@
         ],
         "sequence_records": 55,
         "alias_rows": 55
-      }
+      },
+      "canonical_id": "ponAbe2",
+      "canonical_id_basis": "ucsc-db"
     },
     {
       "assembly_id": "ponAbe3",
@@ -1628,7 +1748,9 @@
         ],
         "sequence_records": 5261,
         "alias_rows": 10522
-      }
+      },
+      "canonical_id": "ponAbe3",
+      "canonical_id_basis": "ucsc-db"
     },
     {
       "assembly_id": "rheMac10",
@@ -1658,7 +1780,9 @@
         ],
         "sequence_records": 2939,
         "alias_rows": 5878
-      }
+      },
+      "canonical_id": "Mmul_10",
+      "canonical_id_basis": "ucsc-description-token"
     },
     {
       "assembly_id": "rn5",
@@ -1688,7 +1812,9 @@
         ],
         "sequence_records": 155,
         "alias_rows": 155
-      }
+      },
+      "canonical_id": "rn5",
+      "canonical_id_basis": "ucsc-db"
     },
     {
       "assembly_id": "sacCer3",
@@ -1718,7 +1844,9 @@
         ],
         "sequence_records": 17,
         "alias_rows": 51
-      }
+      },
+      "canonical_id": "sacCer3",
+      "canonical_id_basis": "ucsc-db"
     },
     {
       "assembly_id": "saiBol1",
@@ -1748,7 +1876,9 @@
         ],
         "sequence_records": 2685,
         "alias_rows": 5370
-      }
+      },
+      "canonical_id": "saiBol1",
+      "canonical_id_basis": "ucsc-db"
     },
     {
       "assembly_id": "susScr11",
@@ -1778,7 +1908,9 @@
         ],
         "sequence_records": 613,
         "alias_rows": 1247
-      }
+      },
+      "canonical_id": "Sscrofa11.1",
+      "canonical_id_basis": "ucsc-description-token"
     },
     {
       "assembly_id": "susScr3",
@@ -1808,7 +1940,9 @@
         ],
         "sequence_records": 4583,
         "alias_rows": 9186
-      }
+      },
+      "canonical_id": "susScr3",
+      "canonical_id_basis": "ucsc-db"
     },
     {
       "assembly_id": "taeGut1",
@@ -1838,7 +1972,9 @@
         ],
         "sequence_records": 70,
         "alias_rows": 70
-      }
+      },
+      "canonical_id": "taeGut1",
+      "canonical_id_basis": "ucsc-db"
     },
     {
       "assembly_id": "tetNig2",
@@ -1868,7 +2004,9 @@
         ],
         "sequence_records": 27,
         "alias_rows": 27
-      }
+      },
+      "canonical_id": "tetNig2",
+      "canonical_id_basis": "ucsc-db"
     },
     {
       "assembly_id": "triMan1",
@@ -1898,7 +2036,9 @@
         ],
         "sequence_records": 6323,
         "alias_rows": 12645
-      }
+      },
+      "canonical_id": "triMan1",
+      "canonical_id_basis": "ucsc-db"
     },
     {
       "assembly_id": "wuhCor1",
@@ -1928,7 +2068,9 @@
         ],
         "sequence_records": 1,
         "alias_rows": 2
-      }
+      },
+      "canonical_id": "wuhCor1",
+      "canonical_id_basis": "ucsc-db"
     },
     {
       "assembly_id": "xenTro10",
@@ -1958,7 +2100,9 @@
         ],
         "sequence_records": 167,
         "alias_rows": 501
-      }
+      },
+      "canonical_id": "xenTro10",
+      "canonical_id_basis": "ucsc-db"
     },
     {
       "assembly_id": "xenTro7",
@@ -1988,7 +2132,9 @@
         ],
         "sequence_records": 7728,
         "alias_rows": 15455
-      }
+      },
+      "canonical_id": "xenTro7",
+      "canonical_id_basis": "ucsc-db"
     }
   ]
 }

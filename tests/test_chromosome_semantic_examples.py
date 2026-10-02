@@ -230,9 +230,12 @@ def test_chromosome_labels_match_the_apps_naming_menu():
 
 
 def test_known_assemblies_are_the_registry_assemblies():
-    from streamlit_app.core.chrom_registry import load_catalog
-    assert set(gen.known_assemblies()) == {i.assembly_id
-                                           for i in load_catalog()}
+    # the fixtures name registries by their manifest key; each is a name the
+    # loader accepts and resolves to a bundled canonical assembly
+    from streamlit_app.core.chrom_registry import find_assembly, load_catalog
+    assert all(find_assembly(a) for a in gen.known_assemblies())
+    assert {find_assembly(a).canonical_id for a in gen.known_assemblies()} == \
+        {i.canonical_id for i in load_catalog()}
 
 
 def test_render_is_deterministic_and_input_order_is_preserved():
