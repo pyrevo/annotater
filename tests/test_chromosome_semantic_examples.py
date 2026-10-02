@@ -230,8 +230,9 @@ def test_chromosome_labels_match_the_apps_naming_menu():
 
 
 def test_known_assemblies_are_the_registry_assemblies():
-    from streamlit_app.streamlit_app import _ASSEMBLY_OPTIONS
-    assert set(gen.known_assemblies()) == set(_ASSEMBLY_OPTIONS.values())
+    from streamlit_app.core.chrom_registry import load_catalog
+    assert set(gen.known_assemblies()) == {i.assembly_id
+                                           for i in load_catalog()}
 
 
 def test_render_is_deterministic_and_input_order_is_preserved():

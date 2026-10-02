@@ -39,3 +39,11 @@ build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
 packages = ["streamlit_app"]
+# Build-only chromosome-registry inputs stay in the source tree for
+# reproducibility (scripts/update_chrom_aliases.py, update_chrom_catalog.py)
+# but are not runtime data: the wheel ships the generated registries and
+# catalog.json only.
+exclude = [
+  "streamlit_app/core/chrom_registry/upstream/",
+  "streamlit_app/core/chrom_registry/sources.json",
+]

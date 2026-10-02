@@ -5,6 +5,7 @@ registry builder (``builder``) is build-time tooling and is not part of the
 runtime API. Nothing here uses the network. See SPEC 5.1.
 """
 
+from .catalog import AssemblyInfo, assembly_options, load_catalog
 from .loader import (
     AUTHORITIES,
     NO_ALIAS_FOR_TARGET,
@@ -24,6 +25,7 @@ __all__ = [
     "AUTHORITIES",
     "NO_ALIAS_FOR_TARGET",
     "UNKNOWN",
+    "AssemblyInfo",
     "ChromosomeRegistry",
     "RegistryDataError",
     "RegistryError",
@@ -32,5 +34,7 @@ __all__ = [
     "SequenceRecord",
     "UnsupportedAssemblyError",
     "UnsupportedAuthorityError",
+    "assembly_options",
+    "load_catalog",
     "load_registry",
 ]

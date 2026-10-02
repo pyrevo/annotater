@@ -30,8 +30,13 @@ def _registry_rows(assembly):
     return ref.parse_registry_tsv(text)
 
 
-def test_all_six_assemblies_are_covered():
-    assert ASSEMBLIES == ["GRCh38", "hg19", "GRCm39", "dm6", "GRCz11", "rn7"]
+def test_every_bundled_assembly_is_covered_and_evidence_is_unchanged():
+    """The oracle runs over the whole bundled catalog, not a hand list."""
+    from streamlit_app.core.chrom_registry import load_catalog
+    assert set(ASSEMBLIES) == {i.assembly_id for i in load_catalog()}
+    assert ASSEMBLIES[:6] == ["GRCh38", "hg19", "GRCm39", "dm6", "GRCz11",
+                              "rn7"]
+    assert len(ASSEMBLIES) == 64
     assert EVIDENCE_ASSEMBLIES == ["hg19", "rn7"]
 
 
@@ -119,7 +124,10 @@ def test_exact_versioned_accessions(assembly):
         for variant in variants - known:
             assert not registry.resolve(variant).resolved, (alias, variant)
         checked += 1
-    assert checked > 0
+    if not checked:   # e.g. Ensembl-names-only tables carry no accessions
+        assert not [f for f in oracle.facts
+                    if f[1] in ("genbank", "refseq")
+                    and VERSIONED.match(f[2])]
 
 
 # ---- label corrections ------------------------------------------------------

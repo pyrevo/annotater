@@ -1,0 +1,8 @@
+seq_id	ucsc	assembly	ensembl	genbank	refseq
+ce11:chrI	chrI		I		NC_003279.8
+ce11:chrII	chrII		II		NC_003280.10
+ce11:chrIII	chrIII		III		NC_003281.10
+ce11:chrIV	chrIV		IV		NC_003282.8
+ce11:chrM	chrM		MtDNA		NC_001328.1
+ce11:chrV	chrV		V		NC_003283.11
+ce11:chrX	chrX		X		NC_003284.9

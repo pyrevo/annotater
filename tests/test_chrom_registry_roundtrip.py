@@ -13,12 +13,15 @@ import pandas as pd
 import pytest
 
 from streamlit_app.core import normalize_chromosomes
-from streamlit_app.core.chrom_registry import AUTHORITIES, load_registry
+from streamlit_app.core.chrom_registry import AUTHORITIES, load_catalog, load_registry
 
+# Deep set (dataframe-level properties) and the whole bundled catalog
+# (registry-level round trip).
 ASSEMBLIES = ["GRCh38", "hg19", "GRCm39", "dm6", "GRCz11", "rn7"]
+BUNDLED = [i.assembly_id for i in load_catalog()]
 
 
-@pytest.mark.parametrize("assembly", ASSEMBLIES)
+@pytest.mark.parametrize("assembly", BUNDLED)
 def test_every_alias_round_trips_through_every_available_authority(assembly):
     registry = load_registry(assembly)
     checked = 0

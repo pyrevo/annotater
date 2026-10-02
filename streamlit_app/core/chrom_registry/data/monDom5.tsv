@@ -1,0 +1,12 @@
+seq_id	ucsc	assembly	ensembl	genbank	refseq
+monDom5:chr1	chr1		1	CM000368.1	NC_008801.1
+monDom5:chr2	chr2		2	CM000369.1	NC_008802.1
+monDom5:chr3	chr3		3	CM000370.1	NC_008803.1
+monDom5:chr4	chr4		4	CM000371.1	NC_008804.1
+monDom5:chr5	chr5		5	CM000372.1	NC_008805.1
+monDom5:chr6	chr6		6	CM000373.1	NC_008806.1
+monDom5:chr7	chr7		7	CM000374.1	NC_008807.1
+monDom5:chr8	chr8		8	CM000375.1	NC_008808.1
+monDom5:chrM	chrM		MT		NC_006299.1
+monDom5:chrUn	chrUn		Un		
+monDom5:chrX	chrX		X	CM000376.1	NC_008809.1

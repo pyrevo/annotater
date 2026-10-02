@@ -13,7 +13,6 @@ network, no working-directory paths.
 
 from __future__ import annotations
 
-import json
 from collections.abc import Mapping
 from dataclasses import dataclass
 from functools import cache
@@ -183,13 +182,15 @@ def _read_resource(name: str) -> str:
 @cache
 def load_registry(assembly: str) -> ChromosomeRegistry:
     """Load the packaged registry for ``assembly`` (exact id, no fallback)."""
-    config = json.loads(_read_resource("sources.json"))
-    for entry in config["assemblies"]:
-        if entry["assembly_id"] == assembly:
+    from .catalog import load_catalog
+
+    catalog = load_catalog()
+    for info in catalog:
+        if info.assembly_id == assembly:
             return ChromosomeRegistry.from_tsv(
-                assembly, _read_resource(entry["registry_file"])
+                assembly, _read_resource(info.registry_file)
             )
     raise UnsupportedAssemblyError(
         f"no chromosome registry for assembly {assembly!r}; supported: "
-        f"{[e['assembly_id'] for e in config['assemblies']]}"
+        f"{sorted((i.assembly_id for i in catalog), key=str.casefold)}"
     )

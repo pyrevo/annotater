@@ -330,10 +330,20 @@ def test_built_wheel_contains_runtime_registry_and_works(tmp_path):
     with zipfile.ZipFile(wheel) as zf:
         names = set(zf.namelist())
         zf.extractall(tmp_path / "site")
-    assemblies = ("GRCh38", "hg19", "GRCm39", "dm6", "GRCz11", "rn7")
-    for required in ("sources.json", "loader.py", "__init__.py",
+    from streamlit_app.core.chrom_registry import load_catalog
+    assemblies = [i.assembly_id for i in load_catalog()]
+    assert len(assemblies) == 64
+    for required in ("catalog.json", "catalog.py", "loader.py", "__init__.py",
                      *(f"data/{a}.tsv" for a in assemblies)):
         assert prefix + required in names, required
+    # Build-only inputs stay in the source tree and out of the runtime wheel.
+    assert not [n for n in names if n.startswith(prefix + "upstream/")]
+    assert prefix + "sources.json" not in names
+    with zipfile.ZipFile(wheel) as zf:
+        registry_bytes = sum(i.compress_size for i in zf.infolist()
+                             if i.filename.startswith(prefix + "data/"))
+    assert registry_bytes < 4_000_000          # compressed registries
+    assert wheel.stat().st_size < 5_000_000
 
     code = textwrap.dedent(f"""
         import sys
@@ -353,6 +363,8 @@ def test_built_wheel_contains_runtime_registry_and_works(tmp_path):
                   ("GRCm39", "dm6", "GRCz11", "rn7")]
         d = load_registry("dm6")
         assert d.render(d.resolve("2L").seq_id, "ucsc").alias == "chr2L"
+        m = load_registry("mm10")
+        assert m.render(m.resolve("NC_000067.6").seq_id, "ucsc").alias == "chr1"
         print(len(r), len(h), *counts)
     """)
     run = subprocess.run([sys.executable, "-c", code], cwd=tmp_path,

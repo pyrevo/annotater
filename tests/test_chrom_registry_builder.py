@@ -341,7 +341,11 @@ def _raw_rows(entry):
 
 
 def test_configured_assemblies():
-    assert ASSEMBLY_IDS == ["GRCh38", "hg19", "GRCm39", "dm6", "GRCz11", "rn7"]
+    # the six reviewed production assemblies keep their ids and positions;
+    # the rest of the bundle is derived (tests/test_chrom_catalog.py)
+    assert ASSEMBLY_IDS[:6] == ["GRCh38", "hg19", "GRCm39", "dm6", "GRCz11",
+                                "rn7"]
+    assert len(ASSEMBLY_IDS) == len(set(ASSEMBLY_IDS))
 
 
 @pytest.mark.parametrize("assembly_id", ASSEMBLY_IDS)

@@ -36,7 +36,7 @@ def test_registries_load_independently_and_are_cached(grch38, hg19):
     assert load_registry("GRCh38") is grch38 and load_registry("hg19") is hg19
 
 
-@pytest.mark.parametrize("name", ["GRCh37", "hg38", "grch37", "HG19", "mm10"])
+@pytest.mark.parametrize("name", ["GRCh37", "hg38", "grch37", "HG19", "mm9"])
 def test_assemblies_are_not_aliased_and_unsupported_still_fail(name):
     with pytest.raises(UnsupportedAssemblyError):
         load_registry(name)

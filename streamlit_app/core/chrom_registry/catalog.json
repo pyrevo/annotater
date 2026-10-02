@@ -1,0 +1,581 @@
+{
+  "schema_version": 1,
+  "assemblies": [
+    {
+      "assembly_id": "otoGar3",
+      "ucsc_db": "otoGar3",
+      "label": "Bushbaby — Mar. 2011 (Broad/otoGar3)",
+      "organism": "Bushbaby",
+      "scientific_name": "Otolemur garnettii",
+      "description": "Mar. 2011 (Broad/otoGar3)",
+      "registry_file": "data/otoGar3.tsv"
+    },
+    {
+      "assembly_id": "ce11",
+      "ucsc_db": "ce11",
+      "label": "C. elegans — Feb. 2013 (WBcel235/ce11)",
+      "organism": "C. elegans",
+      "scientific_name": "Caenorhabditis elegans",
+      "description": "Feb. 2013 (WBcel235/ce11)",
+      "registry_file": "data/ce11.tsv"
+    },
+    {
+      "assembly_id": "ci1",
+      "ucsc_db": "ci1",
+      "label": "C. intestinalis — Dec. 2002 (JGI 1.0/ci1)",
+      "organism": "C. intestinalis",
+      "scientific_name": "Ciona intestinalis",
+      "description": "Dec. 2002 (JGI 1.0/ci1)",
+      "registry_file": "data/ci1.tsv"
+    },
+    {
+      "assembly_id": "ci3",
+      "ucsc_db": "ci3",
+      "label": "C. intestinalis — Apr. 2011 (Kyoto KH/ci3)",
+      "organism": "C. intestinalis",
+      "scientific_name": "Ciona intestinalis",
+      "description": "Apr. 2011 (Kyoto KH/ci3)",
+      "registry_file": "data/ci3.tsv"
+    },
+    {
+      "assembly_id": "felCat5",
+      "ucsc_db": "felCat5",
+      "label": "Cat — Sep. 2011 (ICGSC Felis_catus 6.2/felCat5)",
+      "organism": "Cat",
+      "scientific_name": "Felis catus",
+      "description": "Sep. 2011 (ICGSC Felis_catus 6.2/felCat5)",
+      "registry_file": "data/felCat5.tsv"
+    },
+    {
+      "assembly_id": "felCat9",
+      "ucsc_db": "felCat9",
+      "label": "Cat — Nov. 2017 (Felis_catus_9.0/felCat9)",
+      "organism": "Cat",
+      "scientific_name": "Felis catus",
+      "description": "Nov. 2017 (Felis_catus_9.0/felCat9)",
+      "registry_file": "data/felCat9.tsv"
+    },
+    {
+      "assembly_id": "galGal6",
+      "ucsc_db": "galGal6",
+      "label": "Chicken — Mar. 2018 (GRCg6a/galGal6)",
+      "organism": "Chicken",
+      "scientific_name": "Gallus gallus",
+      "description": "Mar. 2018 (GRCg6a/galGal6)",
+      "registry_file": "data/galGal6.tsv"
+    },
+    {
+      "assembly_id": "criGriChoV2",
+      "ucsc_db": "criGriChoV2",
+      "label": "Chinese hamster — Jun. 2017 (CHOK1S_HZDv1/criGriChoV2)",
+      "organism": "Chinese hamster",
+      "scientific_name": "Cricetulus griseus",
+      "description": "Jun. 2017 (CHOK1S_HZDv1/criGriChoV2)",
+      "registry_file": "data/criGriChoV2.tsv"
+    },
+    {
+      "assembly_id": "bosTau6",
+      "ucsc_db": "bosTau6",
+      "label": "Cow — Nov. 2009 (Bos_taurus_UMD_3.1/bosTau6)",
+      "organism": "Cow",
+      "scientific_name": "Bos taurus",
+      "description": "Nov. 2009 (Bos_taurus_UMD_3.1/bosTau6)",
+      "registry_file": "data/bosTau6.tsv"
+    },
+    {
+      "assembly_id": "bosTau9",
+      "ucsc_db": "bosTau9",
+      "label": "Cow — Apr. 2018 (ARS-UCD1.2/bosTau9)",
+      "organism": "Cow",
+      "scientific_name": "Bos taurus",
+      "description": "Apr. 2018 (ARS-UCD1.2/bosTau9)",
+      "registry_file": "data/bosTau9.tsv"
+    },
+    {
+      "assembly_id": "macFas5",
+      "ucsc_db": "macFas5",
+      "label": "Crab-eating macaque — Jun. 2013 (Macaca_fascicularis_5.0/macFas5)",
+      "organism": "Crab-eating macaque",
+      "scientific_name": "Macaca fascicularis",
+      "description": "Jun. 2013 (Macaca_fascicularis_5.0/macFas5)",
+      "registry_file": "data/macFas5.tsv"
+    },
+    {
+      "assembly_id": "dm6",
+      "ucsc_db": "dm6",
+      "label": "D. melanogaster — Aug. 2014 (BDGP Release 6 + ISO1 MT/dm6)",
+      "organism": "D. melanogaster",
+      "scientific_name": "Drosophila melanogaster",
+      "description": "Aug. 2014 (BDGP Release 6 + ISO1 MT/dm6)",
+      "registry_file": "data/dm6.tsv"
+    },
+    {
+      "assembly_id": "canFam3",
+      "ucsc_db": "canFam3",
+      "label": "Dog — Sep. 2011 (Broad CanFam3.1/canFam3)",
+      "organism": "Dog",
+      "scientific_name": "Canis lupus familiaris",
+      "description": "Sep. 2011 (Broad CanFam3.1/canFam3)",
+      "registry_file": "data/canFam3.tsv"
+    },
+    {
+      "assembly_id": "canFam4",
+      "ucsc_db": "canFam4",
+      "label": "Dog — Mar. 2020 (UU_Cfam_GSD_1.0/canFam4)",
+      "organism": "Dog",
+      "scientific_name": "Canis lupus familiaris",
+      "description": "Mar. 2020 (UU_Cfam_GSD_1.0/canFam4)",
+      "registry_file": "data/canFam4.tsv"
+    },
+    {
+      "assembly_id": "canFam5",
+      "ucsc_db": "canFam5",
+      "label": "Dog — May 2019 (UMICH_Zoey_3.1/canFam5)",
+      "organism": "Dog",
+      "scientific_name": "Canis lupus familiaris",
+      "description": "May 2019 (UMICH_Zoey_3.1/canFam5)",
+      "registry_file": "data/canFam5.tsv"
+    },
+    {
+      "assembly_id": "canFam6",
+      "ucsc_db": "canFam6",
+      "label": "Dog — Oct. 2020 (Dog10K_Boxer_Tasha/canFam6)",
+      "organism": "Dog",
+      "scientific_name": "Canis lupus familiaris",
+      "description": "Oct. 2020 (Dog10K_Boxer_Tasha/canFam6)",
+      "registry_file": "data/canFam6.tsv"
+    },
+    {
+      "assembly_id": "loxAfr3",
+      "ucsc_db": "loxAfr3",
+      "label": "Elephant — Jul. 2009 (Broad/loxAfr3)",
+      "organism": "Elephant",
+      "scientific_name": "Loxodonta africana",
+      "description": "Jul. 2009 (Broad/loxAfr3)",
+      "registry_file": "data/loxAfr3.tsv"
+    },
+    {
+      "assembly_id": "musFur1",
+      "ucsc_db": "musFur1",
+      "label": "Ferret — Apr. 2011 (MusPutFur1.0/musFur1)",
+      "organism": "Ferret ",
+      "scientific_name": "Mustela putorius furo",
+      "description": "Apr. 2011 (MusPutFur1.0/musFur1)",
+      "registry_file": "data/musFur1.tsv"
+    },
+    {
+      "assembly_id": "fr2",
+      "ucsc_db": "fr2",
+      "label": "Fugu — Oct. 2004 (JGI 4.0/fr2)",
+      "organism": "Fugu",
+      "scientific_name": "Takifugu rubripes",
+      "description": "Oct. 2004 (JGI 4.0/fr2)",
+      "registry_file": "data/fr2.tsv"
+    },
+    {
+      "assembly_id": "fr3",
+      "ucsc_db": "fr3",
+      "label": "Fugu — Oct. 2011 (FUGU5/fr3)",
+      "organism": "Fugu",
+      "scientific_name": "Takifugu rubripes",
+      "description": "Oct. 2011 (FUGU5/fr3)",
+      "registry_file": "data/fr3.tsv"
+    },
+    {
+      "assembly_id": "aquChr2",
+      "ucsc_db": "aquChr2",
+      "label": "Golden eagle — Oct. 2014 (aquChr-1.0.2/aquChr2)",
+      "organism": "Golden eagle",
+      "scientific_name": "Aquila chrysaetos canadensis",
+      "description": "Oct. 2014 (aquChr-1.0.2/aquChr2)",
+      "registry_file": "data/aquChr2.tsv"
+    },
+    {
+      "assembly_id": "gorGor3",
+      "ucsc_db": "gorGor3",
+      "label": "Gorilla — May 2011 (gorGor3.1/gorGor3)",
+      "organism": "Gorilla",
+      "scientific_name": "Gorilla gorilla gorilla",
+      "description": "May 2011 (gorGor3.1/gorGor3)",
+      "registry_file": "data/gorGor3.tsv"
+    },
+    {
+      "assembly_id": "gorGor6",
+      "ucsc_db": "gorGor6",
+      "label": "Gorilla — Aug. 2019 (Kamilah_GGO_v0/gorGor6)",
+      "organism": "Gorilla",
+      "scientific_name": "Gorilla gorilla gorilla",
+      "description": "Aug. 2019 (Kamilah_GGO_v0/gorGor6)",
+      "registry_file": "data/gorGor6.tsv"
+    },
+    {
+      "assembly_id": "chlSab2",
+      "ucsc_db": "chlSab2",
+      "label": "Green monkey — Mar. 2014 (Chlorocebus_sabeus 1.1/chlSab2)",
+      "organism": "Green monkey",
+      "scientific_name": "Chlorocebus sabaeus",
+      "description": "Mar. 2014 (Chlorocebus_sabeus 1.1/chlSab2)",
+      "registry_file": "data/chlSab2.tsv"
+    },
+    {
+      "assembly_id": "cavPor3",
+      "ucsc_db": "cavPor3",
+      "label": "Guinea pig — Feb. 2008 (Broad/cavPor3)",
+      "organism": "Guinea pig",
+      "scientific_name": "Cavia porcellus",
+      "description": "Feb. 2008 (Broad/cavPor3)",
+      "registry_file": "data/cavPor3.tsv"
+    },
+    {
+      "assembly_id": "neoSch1",
+      "ucsc_db": "neoSch1",
+      "label": "Hawaiian monk seal — Jun. 2017 (ASM220157v1/neoSch1)",
+      "organism": "Hawaiian monk seal",
+      "scientific_name": "Neomonachus schauinslandi",
+      "description": "Jun. 2017 (ASM220157v1/neoSch1)",
+      "registry_file": "data/neoSch1.tsv"
+    },
+    {
+      "assembly_id": "eriEur2",
+      "ucsc_db": "eriEur2",
+      "label": "Hedgehog — May 2012 (EriEur2.0/eriEur2)",
+      "organism": "Hedgehog",
+      "scientific_name": "Erinaceus europaeus",
+      "description": "May 2012 (EriEur2.0/eriEur2)",
+      "registry_file": "data/eriEur2.tsv"
+    },
+    {
+      "assembly_id": "equCab2",
+      "ucsc_db": "equCab2",
+      "label": "Horse — Sep. 2007 (Broad/equCab2)",
+      "organism": "Horse",
+      "scientific_name": "Equus caballus",
+      "description": "Sep. 2007 (Broad/equCab2)",
+      "registry_file": "data/equCab2.tsv"
+    },
+    {
+      "assembly_id": "equCab3",
+      "ucsc_db": "equCab3",
+      "label": "Horse — Jan. 2018 (EquCab3.0/equCab3)",
+      "organism": "Horse",
+      "scientific_name": "Equus caballus",
+      "description": "Jan. 2018 (EquCab3.0/equCab3)",
+      "registry_file": "data/equCab3.tsv"
+    },
+    {
+      "assembly_id": "hg19",
+      "ucsc_db": "hg19",
+      "label": "Human — Feb. 2009 (GRCh37/hg19)",
+      "organism": "Human",
+      "scientific_name": "Homo sapiens",
+      "description": "Feb. 2009 (GRCh37/hg19)",
+      "registry_file": "data/hg19.tsv"
+    },
+    {
+      "assembly_id": "GRCh38",
+      "ucsc_db": "hg38",
+      "label": "Human — Dec. 2013 (GRCh38/hg38)",
+      "organism": "Human",
+      "scientific_name": "Homo sapiens",
+      "description": "Dec. 2013 (GRCh38/hg38)",
+      "registry_file": "data/GRCh38.tsv"
+    },
+    {
+      "assembly_id": "anoCar2",
+      "ucsc_db": "anoCar2",
+      "label": "Lizard — May 2010 (Broad AnoCar2.0/anoCar2)",
+      "organism": "Lizard",
+      "scientific_name": "Anolis carolinensis",
+      "description": "May 2010 (Broad AnoCar2.0/anoCar2)",
+      "registry_file": "data/anoCar2.tsv"
+    },
+    {
+      "assembly_id": "triMan1",
+      "ucsc_db": "triMan1",
+      "label": "Manatee — Oct. 2011 (Broad v1.0/triMan1)",
+      "organism": "Manatee",
+      "scientific_name": "Trichechus manatus latirostris",
+      "description": "Oct. 2011 (Broad v1.0/triMan1)",
+      "registry_file": "data/triMan1.tsv"
+    },
+    {
+      "assembly_id": "calJac4",
+      "ucsc_db": "calJac4",
+      "label": "Marmoset — May 2020 (Callithrix_jacchus_cj1700_1.1/calJac4)",
+      "organism": "Marmoset",
+      "scientific_name": "Callithrix jacchus",
+      "description": "May 2020 (Callithrix_jacchus_cj1700_1.1/calJac4)",
+      "registry_file": "data/calJac4.tsv"
+    },
+    {
+      "assembly_id": "oryLat2",
+      "ucsc_db": "oryLat2",
+      "label": "Medaka — Oct. 2005 (NIG/UT MEDAKA1/oryLat2)",
+      "organism": "Medaka",
+      "scientific_name": "Oryzias latipes",
+      "description": "Oct. 2005 (NIG/UT MEDAKA1/oryLat2)",
+      "registry_file": "data/oryLat2.tsv"
+    },
+    {
+      "assembly_id": "mm10",
+      "ucsc_db": "mm10",
+      "label": "Mouse — Dec. 2011 (GRCm38/mm10)",
+      "organism": "Mouse",
+      "scientific_name": "Mus musculus",
+      "description": "Dec. 2011 (GRCm38/mm10)",
+      "registry_file": "data/mm10.tsv"
+    },
+    {
+      "assembly_id": "GRCm39",
+      "ucsc_db": "mm39",
+      "label": "Mouse — Jun. 2020 (GRCm39/mm39)",
+      "organism": "Mouse",
+      "scientific_name": "Mus musculus",
+      "description": "Jun. 2020 (GRCm39/mm39)",
+      "registry_file": "data/GRCm39.tsv"
+    },
+    {
+      "assembly_id": "hetGla2",
+      "ucsc_db": "hetGla2",
+      "label": "Naked mole-rat — Jan. 2012 (Broad HetGla_female_1.0/hetGla2)",
+      "organism": "Naked mole-rat",
+      "scientific_name": "Heterocephalus glaber",
+      "description": "Jan. 2012 (Broad HetGla_female_1.0/hetGla2)",
+      "registry_file": "data/hetGla2.tsv"
+    },
+    {
+      "assembly_id": "oreNil2",
+      "ucsc_db": "oreNil2",
+      "label": "Nile tilapia — Jan. 2011 (Broad oreNil1.1/oreNil2)",
+      "organism": "Nile tilapia",
+      "scientific_name": "Oreochromis niloticus",
+      "description": "Jan. 2011 (Broad oreNil1.1/oreNil2)",
+      "registry_file": "data/oreNil2.tsv"
+    },
+    {
+      "assembly_id": "monDom5",
+      "ucsc_db": "monDom5",
+      "label": "Opossum — Oct. 2006 (Broad/monDom5)",
+      "organism": "Opossum",
+      "scientific_name": "Monodelphis domestica",
+      "description": "Oct. 2006 (Broad/monDom5)",
+      "registry_file": "data/monDom5.tsv"
+    },
+    {
+      "assembly_id": "ponAbe2",
+      "ucsc_db": "ponAbe2",
+      "label": "Orangutan — July 2007 (WUGSC 2.0.2/ponAbe2)",
+      "organism": "Orangutan",
+      "scientific_name": "Pongo pygmaeus abelii",
+      "description": "July 2007 (WUGSC 2.0.2/ponAbe2)",
+      "registry_file": "data/ponAbe2.tsv"
+    },
+    {
+      "assembly_id": "ponAbe3",
+      "ucsc_db": "ponAbe3",
+      "label": "Orangutan — Jan. 2018 (Susie_PABv2/ponAbe3)",
+      "organism": "Orangutan",
+      "scientific_name": "Pongo pygmaeus abelii",
+      "description": "Jan. 2018 (Susie_PABv2/ponAbe3)",
+      "registry_file": "data/ponAbe3.tsv"
+    },
+    {
+      "assembly_id": "susScr11",
+      "ucsc_db": "susScr11",
+      "label": "Pig — Feb. 2017 (Sscrofa11.1/susScr11)",
+      "organism": "Pig",
+      "scientific_name": "Sus scrofa",
+      "description": "Feb. 2017 (Sscrofa11.1/susScr11)",
+      "registry_file": "data/susScr11.tsv"
+    },
+    {
+      "assembly_id": "susScr3",
+      "ucsc_db": "susScr3",
+      "label": "Pig — Aug. 2011 (SGSC Sscrofa10.2/susScr3)",
+      "organism": "Pig",
+      "scientific_name": "Sus scrofa",
+      "description": "Aug. 2011 (SGSC Sscrofa10.2/susScr3)",
+      "registry_file": "data/susScr3.tsv"
+    },
+    {
+      "assembly_id": "oryCun2",
+      "ucsc_db": "oryCun2",
+      "label": "Rabbit — Apr. 2009 (Broad/oryCun2)",
+      "organism": "Rabbit",
+      "scientific_name": "Oryctolagus cuniculus",
+      "description": "Apr. 2009 (Broad/oryCun2)",
+      "registry_file": "data/oryCun2.tsv"
+    },
+    {
+      "assembly_id": "rn5",
+      "ucsc_db": "rn5",
+      "label": "Rat — Mar. 2012 (RGSC 5.0/rn5)",
+      "organism": "Rat",
+      "scientific_name": "Rattus norvegicus",
+      "description": "Mar. 2012 (RGSC 5.0/rn5)",
+      "registry_file": "data/rn5.tsv"
+    },
+    {
+      "assembly_id": "rn7",
+      "ucsc_db": "rn7",
+      "label": "Rat — Nov. 2020 (mRatBN7.2/rn7)",
+      "organism": "Rat",
+      "scientific_name": "Rattus norvegicus",
+      "description": "Nov. 2020 (mRatBN7.2/rn7)",
+      "registry_file": "data/rn7.tsv"
+    },
+    {
+      "assembly_id": "rheMac10",
+      "ucsc_db": "rheMac10",
+      "label": "Rhesus — Feb. 2019 (Mmul_10/rheMac10)",
+      "organism": "Rhesus",
+      "scientific_name": "Macaca mulatta",
+      "description": "Feb. 2019 (Mmul_10/rheMac10)",
+      "registry_file": "data/rheMac10.tsv"
+    },
+    {
+      "assembly_id": "sacCer3",
+      "ucsc_db": "sacCer3",
+      "label": "S. cerevisiae — Apr. 2011 (SacCer_Apr2011/sacCer3)",
+      "organism": "S. cerevisiae",
+      "scientific_name": "Saccharomyces cerevisiae",
+      "description": "Apr. 2011 (SacCer_Apr2011/sacCer3)",
+      "registry_file": "data/sacCer3.tsv"
+    },
+    {
+      "assembly_id": "wuhCor1",
+      "ucsc_db": "wuhCor1",
+      "label": "SARS-CoV-2 — Jan. 2020 (NC_045512.2) [wuhCor1]",
+      "organism": "SARS-CoV-2",
+      "scientific_name": "SARS-CoV-2",
+      "description": "Jan. 2020 (NC_045512.2)",
+      "registry_file": "data/wuhCor1.tsv"
+    },
+    {
+      "assembly_id": "oviAri3",
+      "ucsc_db": "oviAri3",
+      "label": "Sheep — Aug. 2012 (ISGC Oar_v3.1/oviAri3)",
+      "organism": "Sheep",
+      "scientific_name": "Ovis aries",
+      "description": "Aug. 2012 (ISGC Oar_v3.1/oviAri3)",
+      "registry_file": "data/oviAri3.tsv"
+    },
+    {
+      "assembly_id": "oviAri4",
+      "ucsc_db": "oviAri4",
+      "label": "Sheep — Nov. 2015 (Oar_v4.0/oviAri4)",
+      "organism": "Sheep",
+      "scientific_name": "Ovis aries",
+      "description": "Nov. 2015 (Oar_v4.0/oviAri4)",
+      "registry_file": "data/oviAri4.tsv"
+    },
+    {
+      "assembly_id": "saiBol1",
+      "ucsc_db": "saiBol1",
+      "label": "Squirrel monkey — Oct. 2011 (Broad/saiBol1)",
+      "organism": "Squirrel monkey",
+      "scientific_name": "Saimiri boliviensis",
+      "description": "Oct. 2011 (Broad/saiBol1)",
+      "registry_file": "data/saiBol1.tsv"
+    },
+    {
+      "assembly_id": "gasAcu1",
+      "ucsc_db": "gasAcu1",
+      "label": "Stickleback — Feb. 2006 (Broad/gasAcu1)",
+      "organism": "Stickleback",
+      "scientific_name": "Gasterosteus aculeatus",
+      "description": "Feb. 2006 (Broad/gasAcu1)",
+      "registry_file": "data/gasAcu1.tsv"
+    },
+    {
+      "assembly_id": "echTel2",
+      "ucsc_db": "echTel2",
+      "label": "Tenrec — Nov. 2012 (Broad/echTel2)",
+      "organism": "Tenrec",
+      "scientific_name": "Echinops telfairi",
+      "description": "Nov. 2012 (Broad/echTel2)",
+      "registry_file": "data/echTel2.tsv"
+    },
+    {
+      "assembly_id": "tetNig2",
+      "ucsc_db": "tetNig2",
+      "label": "Tetraodon — Mar. 2007 (Genoscope 8.0/tetNig2)",
+      "organism": "Tetraodon",
+      "scientific_name": "Tetraodon nigroviridis",
+      "description": "Mar. 2007 (Genoscope 8.0/tetNig2)",
+      "registry_file": "data/tetNig2.tsv"
+    },
+    {
+      "assembly_id": "melGal1",
+      "ucsc_db": "melGal1",
+      "label": "Turkey — Dec. 2009 (TGC Turkey_2.01/melGal1)",
+      "organism": "Turkey",
+      "scientific_name": "Meleagris gallopavo",
+      "description": "Dec. 2009 (TGC Turkey_2.01/melGal1)",
+      "registry_file": "data/melGal1.tsv"
+    },
+    {
+      "assembly_id": "cerSim1",
+      "ucsc_db": "cerSim1",
+      "label": "White rhinoceros — May 2012 (CerSimSim1.0/cerSim1)",
+      "organism": "White rhinoceros",
+      "scientific_name": "Ceratotherium simum",
+      "description": "May 2012 (CerSimSim1.0/cerSim1)",
+      "registry_file": "data/cerSim1.tsv"
+    },
+    {
+      "assembly_id": "xenTro10",
+      "ucsc_db": "xenTro10",
+      "label": "X. tropicalis — Nov. 2019 (UCB_Xtro_10.0/xenTro10)",
+      "organism": "X. tropicalis",
+      "scientific_name": "Xenopus tropicalis",
+      "description": "Nov. 2019 (UCB_Xtro_10.0/xenTro10)",
+      "registry_file": "data/xenTro10.tsv"
+    },
+    {
+      "assembly_id": "xenTro7",
+      "ucsc_db": "xenTro7",
+      "label": "X. tropicalis — Sep. 2012 (JGI 7.0/xenTro7)",
+      "organism": "X. tropicalis",
+      "scientific_name": "Xenopus tropicalis",
+      "description": "Sep. 2012 (JGI 7.0/xenTro7)",
+      "registry_file": "data/xenTro7.tsv"
+    },
+    {
+      "assembly_id": "taeGut1",
+      "ucsc_db": "taeGut1",
+      "label": "Zebra finch — Jul. 2008 (WUGSC 3.2.4/taeGut1)",
+      "organism": "Zebra finch",
+      "scientific_name": "Taeniopygia guttata",
+      "description": "Jul. 2008 (WUGSC 3.2.4/taeGut1)",
+      "registry_file": "data/taeGut1.tsv"
+    },
+    {
+      "assembly_id": "danRer10",
+      "ucsc_db": "danRer10",
+      "label": "Zebrafish — Sep. 2014 (GRCz10/danRer10)",
+      "organism": "Zebrafish",
+      "scientific_name": "Danio rerio",
+      "description": "Sep. 2014 (GRCz10/danRer10)",
+      "registry_file": "data/danRer10.tsv"
+    },
+    {
+      "assembly_id": "GRCz11",
+      "ucsc_db": "danRer11",
+      "label": "Zebrafish — May 2017 (GRCz11/danRer11)",
+      "organism": "Zebrafish",
+      "scientific_name": "Danio rerio",
+      "description": "May 2017 (GRCz11/danRer11)",
+      "registry_file": "data/GRCz11.tsv"
+    },
+    {
+      "assembly_id": "danRer7",
+      "ucsc_db": "danRer7",
+      "label": "Zebrafish — Jul. 2010 (Zv9/danRer7)",
+      "organism": "Zebrafish",
+      "scientific_name": "Danio rerio",
+      "description": "Jul. 2010 (Zv9/danRer7)",
+      "registry_file": "data/danRer7.tsv"
+    }
+  ]
+}
