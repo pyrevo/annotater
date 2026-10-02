@@ -3,8 +3,11 @@
 
 Source of truth: tests/fixtures/semantic_examples.json (declarative).
 The renderer never computes scientific results; it only displays the
-expected facts declared in the fixture. Those facts are verified against
-the independent oracle by tests/oracle/test_semantic_examples_oracle.py.
+expected facts declared in the fixture. Interval facts are verified against
+the independent oracle by tests/oracle/test_semantic_examples_oracle.py;
+chromosome-naming facts by tests/oracle/test_chromosome_semantic_examples.py
+(upstream data) and tests/test_chromosome_semantic_examples.py (the real
+normalization).
 
     python scripts/generate_semantic_examples.py          regenerate blocks
     python scripts/generate_semantic_examples.py --check  fail if docs are stale
@@ -93,6 +96,37 @@ KINDS = {
 }
 
 
+# Chromosome-naming examples (kind "chromosome_naming") declare one genome
+# assembly, one target naming, the identifiers fed to normalization and, per
+# identifier, the expected outcome and output. They are verified against
+# pinned upstream data and the real normalization, never by this renderer.
+CHROMOSOME_KIND = "chromosome_naming"
+SOURCES_FILE = (ROOT / "streamlit_app" / "core" / "chrom_registry"
+                / "sources.json")
+# Target naming -> label (the wording of the app's "Chromosome naming" menu).
+TARGET_LABELS = {
+    "ucsc": "UCSC names",
+    "ensembl": "Ensembl names",
+    "refseq": "NCBI RefSeq accessions",
+    "genbank": "GenBank accessions",
+    "assembly": "Assembly names",
+}
+# Target naming -> short noun used inside a result phrase.
+TARGET_SHORT = {"ucsc": "UCSC", "ensembl": "Ensembl", "refseq": "RefSeq",
+                "genbank": "GenBank", "assembly": "assembly"}
+# Per-identifier outcome vocabulary. "unknown" (identifier not found in the
+# selected assembly) and "no_alias_for_target" (sequence found, no verified
+# name in the target naming) are deliberately different outcomes.
+OUTCOMES = ("renamed", "unchanged", "unknown", "no_alias_for_target")
+ROW_COLUMNS = ("chr", "start", "end", "strand", "name")
+CHROMOSOME_FACTS = {"outcomes", "outputs", "distinct_sequences", "collapses",
+                    "recognized_in_other_assembly", "rows_after"}
+
+
+def known_assemblies(path=SOURCES_FILE):
+    return [a["assembly_id"] for a in json.loads(Path(path).read_text())["assemblies"]]
+
+
 class FixtureError(ValueError):
     pass
 
@@ -155,6 +189,106 @@ def _check_kind(where, ex, exp, n_annotations):
                            f"{missing}")
 
 
+def _check_rows(where, key, rows):
+    if not isinstance(rows, list) or not rows:
+        raise FixtureError(f"{where}: {key} must be a non-empty list")
+    for row in rows:
+        if not isinstance(row, dict) or set(row) != set(ROW_COLUMNS):
+            raise FixtureError(f"{where}: each {key} row needs exactly "
+                               f"{list(ROW_COLUMNS)}")
+        for col in ("start", "end"):
+            if type(row[col]) is not int or row[col] < 0:
+                raise FixtureError(f"{where}: {key} {col} must be a "
+                                   "non-negative integer")
+        if row["start"] >= row["end"]:
+            raise FixtureError(f"{where}: {key} needs start < end")
+        if row["strand"] not in ("+", "-"):
+            raise FixtureError(f"{where}: {key} strand must be '+' or '-'")
+        for col in ("chr", "name"):
+            if not isinstance(row[col], str) or not row[col]:
+                raise FixtureError(f"{where}: {key} {col} must be a "
+                                   "non-empty string")
+
+
+def _validate_chromosome_example(where, ex):
+    """Schema and internal consistency only; scientific truth is tested."""
+    extra = ex.keys() - {"name", "kind", "assembly", "target", "inputs",
+                         "rows", "expected"}
+    if extra:
+        raise FixtureError(f"{where}: unexpected keys {sorted(extra)}")
+    if ex.get("assembly") not in known_assemblies():
+        raise FixtureError(f"{where}: assembly must be one of "
+                           f"{known_assemblies()}")
+    if ex.get("target") not in TARGET_LABELS:
+        raise FixtureError(f"{where}: target must be one of "
+                           f"{sorted(TARGET_LABELS)}")
+    inputs = ex.get("inputs")
+    if (not isinstance(inputs, list) or not inputs
+            or any(not isinstance(i, str) or not i for i in inputs)
+            or len(set(inputs)) != len(inputs)):
+        raise FixtureError(f"{where}: inputs must be a non-empty list of "
+                           "distinct non-empty strings")
+    exp = ex.get("expected")
+    if not isinstance(exp, dict):
+        raise FixtureError(f"{where}: 'expected' must be an object")
+    unknown_facts = exp.keys() - CHROMOSOME_FACTS
+    if unknown_facts:
+        raise FixtureError(f"{where}: unknown expected fact "
+                           f"{sorted(unknown_facts)}")
+    for key in ("outcomes", "outputs"):
+        value = exp.get(key)
+        if not isinstance(value, dict) or set(value) != set(inputs):
+            raise FixtureError(f"{where}: expected {key!r} needs exactly "
+                               "one entry per input")
+    for ident in inputs:
+        outcome, output = exp["outcomes"][ident], exp["outputs"][ident]
+        if outcome not in OUTCOMES:
+            raise FixtureError(f"{where}: outcome of {ident!r} must be one "
+                               f"of {list(OUTCOMES)}")
+        if not isinstance(output, str) or not output:
+            raise FixtureError(f"{where}: output of {ident!r} must be a "
+                               "non-empty string")
+        if (outcome == "renamed") != (output != ident):
+            raise FixtureError(f"{where}: {ident!r} output must differ from "
+                               "the input exactly when it is 'renamed'")
+    for group in exp.get("distinct_sequences", []):
+        if (not isinstance(group, list) or len(group) < 2
+                or not set(group) <= set(inputs)):
+            raise FixtureError(f"{where}: distinct_sequences groups need 2+ "
+                               "declared inputs")
+    for item in exp.get("collapses", []):
+        if (not isinstance(item, dict) or set(item) != {"inputs", "output"}
+                or len(item["inputs"]) < 2
+                or not set(item["inputs"]) <= set(inputs)
+                or any(exp["outputs"][i] != item["output"]
+                       for i in item["inputs"])
+                or any(exp["outcomes"][i] not in ("renamed", "unchanged")
+                       for i in item["inputs"])):
+            raise FixtureError(f"{where}: a collapse needs 2+ resolved "
+                               "inputs that share the declared output")
+    other = exp.get("recognized_in_other_assembly", {})
+    for ident, assembly in other.items():
+        if (exp["outcomes"].get(ident) != "unknown"
+                or assembly not in known_assemblies()
+                or assembly == ex["assembly"]):
+            raise FixtureError(f"{where}: recognized_in_other_assembly needs "
+                               "an unknown input and a different assembly")
+    if "rows_after" in exp:
+        _check_rows(where, "rows", ex.get("rows"))
+        _check_rows(where, "rows_after", exp["rows_after"])
+        rows, after = ex["rows"], exp["rows_after"]
+        if len(rows) != len(after) or not {r["chr"] for r in rows} <= set(inputs):
+            raise FixtureError(f"{where}: rows_after needs one row per row "
+                               "and rows must use declared inputs")
+        for before, now in zip(rows, after):
+            if now["chr"] != exp["outputs"][before["chr"]] or any(
+                    before[c] != now[c] for c in ROW_COLUMNS if c != "chr"):
+                raise FixtureError(f"{where}: rows_after may differ from rows "
+                                   "only in the declared output chr")
+    elif "rows" in ex:
+        raise FixtureError(f"{where}: rows needs expected rows_after")
+
+
 def validate_examples(data):
     """Raise FixtureError unless ``data`` matches the fixture schema."""
     if not isinstance(data, dict) or not isinstance(data.get("examples"), list):
@@ -170,12 +304,16 @@ def validate_examples(data):
             raise FixtureError(f"duplicate example name {name!r}")
         seen.add(name)
         where = f"example {name!r}"
+        if ex.get("kind") == CHROMOSOME_KIND:
+            _validate_chromosome_example(where, ex)
+            continue
         extra = ex.keys() - {"name", "kind", "query", "annotations",
                              "min_overlap", "use_strand", "expected"}
         if extra:
             raise FixtureError(f"{where}: unexpected keys {sorted(extra)}")
         if ex.get("kind") not in KINDS:
-            raise FixtureError(f"{where}: kind must be one of {sorted(KINDS)}")
+            raise FixtureError(f"{where}: kind must be one of "
+                               f"{sorted([*KINDS, CHROMOSOME_KIND])}")
         if "query" not in ex:
             raise FixtureError(f"{where}: missing 'query'")
         _check_interval(f"{where} query", ex["query"], annotation=False)
@@ -329,11 +467,75 @@ def _summary(example, labels):
     return lines
 
 
+def _table(header, rows):
+    """Left-aligned text table: header line, then one line per row."""
+    cells = [list(map(str, header))] + [list(map(str, r)) for r in rows]
+    widths = [max(len(r[i]) for r in cells) for i in range(len(header))]
+    return ["  ".join(c.ljust(w) for c, w in zip(r, widths)).rstrip()
+            for r in cells]
+
+
+def _result_text(example, ident):
+    outcome = example["expected"]["outcomes"][ident]
+    short = TARGET_SHORT[example["target"]]
+    return {
+        "renamed": "renamed",
+        "unchanged": f"recognized; already in {short} naming",
+        "unknown": f"not recognized in {example['assembly']}; kept as provided",
+        "no_alias_for_target": (f"recognized; no verified {short} name; "
+                                "kept as provided"),
+    }[outcome]
+
+
+def _render_chromosome(example):
+    """Chromosome-naming block: declared facts only, one row per identifier.
+
+    Identifiers are shown as table rows (never arrows between rows), so the
+    page cannot suggest that one distinct identifier maps to another.
+    """
+    exp = example["expected"]
+    lines = [f"genome assembly: {example['assembly']}",
+             f"chromosome naming: {TARGET_LABELS[example['target']]}",
+             ("only chromosome names can change; coordinates and assembly "
+              "are unchanged"), ""]
+    lines += _table(("input", "output", "result"),
+                    [(i, exp["outputs"][i], _result_text(example, i))
+                     for i in example["inputs"]])
+    summary = []
+    for group in exp.get("distinct_sequences", []):
+        summary.append("different sequences: " + ", ".join(group))
+    other = exp.get("recognized_in_other_assembly", {})
+    if other:
+        summary.append("recognized in another assembly: " + ", ".join(
+            f"{i} ({a})" for i, a in other.items()))
+    for item in exp.get("collapses", []):
+        summary.append("merged output name (informational): "
+                       + ", ".join(item["inputs"]) + " \u2192 " + item["output"])
+    if summary:
+        lines += [""] + summary
+    if "rows_after" in exp:
+        header = list(ROW_COLUMNS)
+        for title, rows in (("rows before", example["rows"]),
+                            ("rows after", exp["rows_after"])):
+            lines += ["", title]
+            lines += _table(header, [[r[c] for c in header] for r in rows])
+    return lines
+
+
 def render_block(example):
     """Deterministic text for one example (without the HTML markers).
 
     Raises RenderError if any line would exceed MAX_WIDTH.
     """
+    if example["kind"] == CHROMOSOME_KIND:
+        lines = _render_chromosome(example)
+        too_wide = [l for l in lines if len(l) > MAX_WIDTH]
+        if too_wide:
+            raise RenderError(
+                f"example {example['name']!r}: line of {len(too_wide[0])} "
+                f"characters exceeds MAX_WIDTH={MAX_WIDTH}; use a more "
+                "compact fixture")
+        return "```text\n" + "\n".join(lines) + "\n```"
     query = example["query"]
     labels = interval_labels(example)
     rows = list(zip(labels, [query] + list(example["annotations"])))

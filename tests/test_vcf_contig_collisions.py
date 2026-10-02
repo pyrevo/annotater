@@ -189,7 +189,7 @@ def test_resolved_unchanged_and_unresolved_contigs_are_not_renamed():
 
 # --- legacy application path: conflict is reported, never silently merged ----------
 
-def _run_app(query: bytes, annot: bytes):
+def _run_app(query: bytes, annot: bytes, engine: str | None = None):
     from pathlib import Path
 
     from streamlit.testing.v1 import AppTest
@@ -200,6 +200,8 @@ def _run_app(query: bytes, annot: bytes):
     def widget(kind, key):
         return next(e for e in at.get(kind) if getattr(e, "key", None) == key)
 
+    if engine is not None:
+        widget("radio", "engine").set_value(engine)
     widget("selectbox", "chr_assembly").set_value("Human \u2014 GRCh38")
     widget("selectbox", "chr_naming").set_value("UCSC names")
     widget("file_uploader", "coord_file").set_value(
@@ -236,3 +238,28 @@ def test_app_still_exports_when_collapsing_contigs_are_identical():
     contigs = "##contig=<ID=1,length=100>\n##contig=<ID=chr1,length=100>\n"
     at = _run_app((_VCF_HEAD.format(contigs=contigs) + _ROWS).encode(), _GFF)
     assert not at.exception and not at.error
+
+
+def test_both_engines_export_identical_vcf_after_a_compatible_collapse():
+    """Integration boundary: query contigs ``1`` and ``chr1`` collapse to
+    ``chr1`` with identical metadata; Bedtools and Polars-Bio must export the
+    same VCF (one merged contig, every record on chr1)."""
+    contigs = "##contig=<ID=1,length=100>\n##contig=<ID=chr1,length=100>\n"
+    rows = _ROWS + "chr1\t120\tv2\tA\tT\t50\tPASS\t.\tGT\t0/1\n"
+    query = (_VCF_HEAD.format(contigs=contigs) + rows).encode()
+    exports = []
+    for engine in ("Bedtools", "Polars-Bio"):
+        at = _run_app(query, _GFF, engine=engine)
+        assert not at.exception and not at.error
+        state = at.session_state
+        vcf = convert_df_to_vcf(
+            state["result_df"],
+            original_header_lines=state["result_vcf_header_lines"],
+            contig_renames=state["result_vcf_contig_renames"])
+        exports.append("\n".join(
+            line for line in vcf.splitlines() if not line.startswith("##date=")))
+    assert exports[0] == exports[1]
+    assert _contigs(exports[0]) == ["##contig=<ID=chr1,length=100>"]
+    records = [l.split("\t")[:3] for l in exports[0].splitlines()
+               if not l.startswith("#")]
+    assert records == [["chr1", "100", "v1"], ["chr1", "120", "v2"]]

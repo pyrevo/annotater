@@ -16,7 +16,8 @@ This page is for maintainers; it is excluded from the published site.
 
 1. Add an entry to `tests/fixtures/semantic_examples.json` with a `kind`
    (`overlap`, `one_base_overlap`, `touching`, `closest`, `closest_tie`,
-   `contains`, `within`, `min_overlap`, `strand`). The kind fixes which
+   `contains`, `within`, `min_overlap`, `strand`, or `chromosome_naming`,
+   described at the end of this page). The kind fixes which
    facts must be declared and the order they are shown in; a missing
    required fact fails validation.
 2. Declare every expected value in the fixture (including per-candidate
@@ -41,3 +42,111 @@ wrapping, so choose a more compact one.
 Routine fixture additions that pass the rendering-contract tests do not
 need a full manual review of every page. Preview with `mkdocs serve`
 when a review is required.
+
+## Chromosome-naming examples
+
+Kind `chromosome_naming` declares chromosome-name normalization facts
+(assembly, target naming, identifiers, per-identifier outcome and output)
+instead of intervals. Its facts are verified against pinned upstream data
+(`tests/oracle/test_chromosome_semantic_examples.py`) and the real
+normalization (`tests/test_chromosome_semantic_examples.py`). These blocks
+live on this maintainer page until the user documentation is written.
+
+Exact accession identity (GRCh38, UCSC names):
+
+<!-- BEGIN GENERATED: chromosome_accession_identity -->
+```text
+genome assembly: GRCh38
+chromosome naming: UCSC names
+only chromosome names can change; coordinates and assembly are unchanged
+
+input         output  result
+NC_000001.11  chr1    renamed
+```
+<!-- END GENERATED: chromosome_accession_identity -->
+
+hg19 `chrM` and `chrMT` are different sequences (Ensembl names):
+
+<!-- BEGIN GENERATED: chromosome_hg19_mitochondria -->
+```text
+genome assembly: hg19
+chromosome naming: Ensembl names
+only chromosome names can change; coordinates and assembly are unchanged
+
+input  output  result
+chrM   chrM    recognized; no verified Ensembl name; kept as provided
+chrMT  MT      renamed
+
+different sequences: chrM, chrMT
+```
+<!-- END GENERATED: chromosome_hg19_mitochondria -->
+
+Non-human naming (dm6, Ensembl names):
+
+<!-- BEGIN GENERATED: chromosome_dm6_non_human -->
+```text
+genome assembly: dm6
+chromosome naming: Ensembl names
+only chromosome names can change; coordinates and assembly are unchanged
+
+input  output  result
+chr2L  2L      renamed
+chrM   chrM    recognized; no verified Ensembl name; kept as provided
+```
+<!-- END GENERATED: chromosome_dm6_non_human -->
+
+Identifiers that belong to another assembly are not recognized:
+
+<!-- BEGIN GENERATED: chromosome_wrong_assembly -->
+```text
+genome assembly: GRCh38
+chromosome naming: UCSC names
+only chromosome names can change; coordinates and assembly are unchanged
+
+input         output        result
+NC_000001.10  NC_000001.10  not recognized in GRCh38; kept as provided
+chr2L         chr2L         not recognized in GRCh38; kept as provided
+
+recognized in another assembly: NC_000001.10 (hg19), chr2L (dm6)
+```
+<!-- END GENERATED: chromosome_wrong_assembly -->
+
+Two input names can share one output name (informational):
+
+<!-- BEGIN GENERATED: chromosome_many_to_one -->
+```text
+genome assembly: GRCh38
+chromosome naming: UCSC names
+only chromosome names can change; coordinates and assembly are unchanged
+
+input  output  result
+1      chr1    renamed
+chr1   chr1    recognized; already in UCSC naming
+
+merged output name (informational): 1, chr1 → chr1
+```
+<!-- END GENERATED: chromosome_many_to_one -->
+
+Only the chromosome name changes; coordinates, strand and metadata do not:
+
+<!-- BEGIN GENERATED: chromosome_coordinates_preserved -->
+```text
+genome assembly: GRCh38
+chromosome naming: UCSC names
+only chromosome names can change; coordinates and assembly are unchanged
+
+input         output  result
+NC_000001.11  chr1    renamed
+NC_000002.12  chr2    renamed
+
+rows before
+chr           start  end  strand  name
+NC_000001.11  100    200  +       peak1
+NC_000002.12  0      50   -       peak2
+
+rows after
+chr   start  end  strand  name
+chr1  100    200  +       peak1
+chr2  0      50   -       peak2
+```
+<!-- END GENERATED: chromosome_coordinates_preserved -->

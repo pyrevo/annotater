@@ -1,5 +1,5 @@
 {
-  "_comment": "Declarative scientific interval examples (canonical 0-based half-open). Each example has a `kind` that fixes which facts it must declare (see KINDS in the generator). Expected values are declared facts: tests/oracle/test_semantic_examples_oracle.py verifies each one against the independent oracle (tests/oracle/reference.py); scripts/generate_semantic_examples.py only displays them in docs.",
+  "_comment": "Declarative scientific interval examples (canonical 0-based half-open). Each example has a `kind` that fixes which facts it must declare (see KINDS in the generator). Expected values are declared facts: tests/oracle/test_semantic_examples_oracle.py verifies each one against the independent oracle (tests/oracle/reference.py); scripts/generate_semantic_examples.py only displays them in docs. Kind `chromosome_naming` declares chromosome-name normalization facts instead of intervals; they are verified against pinned upstream data (tests/oracle/test_chromosome_semantic_examples.py) and the real normalization (tests/test_chromosome_semantic_examples.py).",
   "examples": [
     {
       "name": "true_overlap",
@@ -91,6 +91,83 @@
         {"id": "A3", "chr": "chr1", "start": 22, "end": 25}
       ],
       "expected": {"candidate_distances": {"A1": 2, "A2": 2, "A3": 9}, "closest_distance": 2, "closest_ties": ["A1", "A2"]}
+    },
+    {
+      "name": "chromosome_accession_identity",
+      "kind": "chromosome_naming",
+      "assembly": "GRCh38",
+      "target": "ucsc",
+      "inputs": ["NC_000001.11"],
+      "expected": {
+        "outcomes": {"NC_000001.11": "renamed"},
+        "outputs": {"NC_000001.11": "chr1"}
+      }
+    },
+    {
+      "name": "chromosome_hg19_mitochondria",
+      "kind": "chromosome_naming",
+      "assembly": "hg19",
+      "target": "ensembl",
+      "inputs": ["chrM", "chrMT"],
+      "expected": {
+        "outcomes": {"chrM": "no_alias_for_target", "chrMT": "renamed"},
+        "outputs": {"chrM": "chrM", "chrMT": "MT"},
+        "distinct_sequences": [["chrM", "chrMT"]]
+      }
+    },
+    {
+      "name": "chromosome_dm6_non_human",
+      "kind": "chromosome_naming",
+      "assembly": "dm6",
+      "target": "ensembl",
+      "inputs": ["chr2L", "chrM"],
+      "expected": {
+        "outcomes": {"chr2L": "renamed", "chrM": "no_alias_for_target"},
+        "outputs": {"chr2L": "2L", "chrM": "chrM"}
+      }
+    },
+    {
+      "name": "chromosome_wrong_assembly",
+      "kind": "chromosome_naming",
+      "assembly": "GRCh38",
+      "target": "ucsc",
+      "inputs": ["NC_000001.10", "chr2L"],
+      "expected": {
+        "outcomes": {"NC_000001.10": "unknown", "chr2L": "unknown"},
+        "outputs": {"NC_000001.10": "NC_000001.10", "chr2L": "chr2L"},
+        "recognized_in_other_assembly": {"NC_000001.10": "hg19", "chr2L": "dm6"}
+      }
+    },
+    {
+      "name": "chromosome_many_to_one",
+      "kind": "chromosome_naming",
+      "assembly": "GRCh38",
+      "target": "ucsc",
+      "inputs": ["1", "chr1"],
+      "expected": {
+        "outcomes": {"1": "renamed", "chr1": "unchanged"},
+        "outputs": {"1": "chr1", "chr1": "chr1"},
+        "collapses": [{"inputs": ["1", "chr1"], "output": "chr1"}]
+      }
+    },
+    {
+      "name": "chromosome_coordinates_preserved",
+      "kind": "chromosome_naming",
+      "assembly": "GRCh38",
+      "target": "ucsc",
+      "inputs": ["NC_000001.11", "NC_000002.12"],
+      "rows": [
+        {"chr": "NC_000001.11", "start": 100, "end": 200, "strand": "+", "name": "peak1"},
+        {"chr": "NC_000002.12", "start": 0, "end": 50, "strand": "-", "name": "peak2"}
+      ],
+      "expected": {
+        "outcomes": {"NC_000001.11": "renamed", "NC_000002.12": "renamed"},
+        "outputs": {"NC_000001.11": "chr1", "NC_000002.12": "chr2"},
+        "rows_after": [
+          {"chr": "chr1", "start": 100, "end": 200, "strand": "+", "name": "peak1"},
+          {"chr": "chr2", "start": 0, "end": 50, "strand": "-", "name": "peak2"}
+        ]
+      }
     }
   ]
 }
