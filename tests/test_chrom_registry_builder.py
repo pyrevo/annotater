@@ -295,15 +295,22 @@ def test_cli_fetch_drift_is_hard_stop_without_accept(entry):
 
 
 def test_cli_fetch_unchanged_is_ok(capsys):
-    config = builder.load_sources()
-    by_url = {e["source_url"]:
-              (builder.PACKAGE_DIR / e["upstream_file"]).read_bytes()
-              for e in config["assemblies"]}
+    entry = builder.get_assembly(builder.load_sources(), "GRCh38")
+    data = (builder.PACKAGE_DIR / entry["upstream_file"]).read_bytes()
     args = _Args()
     args.fetch = True
+    args.assembly = "GRCh38"
     assert update_chrom_aliases.run(
-        args, fetch=lambda url: (by_url[url], "x")) == 0
-    assert capsys.readouterr().out.count("upstream unchanged") == len(by_url)
+        args, fetch=lambda url: (data, "x")) == 0
+    assert "upstream unchanged" in capsys.readouterr().out
+
+
+def test_cli_fetch_hg19_changed_ensembl_tables_is_hard_stop():
+    args = _Args()
+    args.fetch = True
+    args.assembly = "hg19"
+    with pytest.raises(RegistryBuildError, match="Ensembl table"):
+        update_chrom_aliases.run(args, fetch=lambda url: (gz(GOOD), "x"))
 
 
 def test_accept_upstream_repins_in_isolation(entry, tmp_path):
@@ -379,9 +386,15 @@ def test_wide_schema_is_lossless_and_corrections_invent_nothing(assembly_id):
 def test_input_row_order_does_not_change_hg19_output():
     e = _entry("hg19")
     rows = _raw_rows(e)
-    a = builder.build_registry(rows, "hg19", e["label_corrections"])
+    from streamlit_app.core.chrom_registry import ensembl_evidence as ev
+    cfg = e["ensembl_evidence"]
+    evidence = ev.parse_evidence(
+        (builder.PACKAGE_DIR / cfg["evidence_file"]).read_text())
+    a = builder.build_registry(rows, "hg19", e["label_corrections"],
+                               evidence, cfg)
     b = builder.build_registry(list(reversed(rows)), "hg19",
-                               e["label_corrections"])
+                               e["label_corrections"],
+                               list(reversed(evidence)), cfg)
     assert a == b
 
 
@@ -425,9 +438,16 @@ def test_hg19_normalized_registry_carries_corrected_authority():
         "hg19:chrM", "chrM", "", "", "", "NC_001807.4"]
 
 
-def test_hg19_ensembl_is_not_inferred_from_assembly_names():
-    rows = _raw_rows(_entry("hg19"))
-    assert not any("ensembl" in source for _, _, source in rows)
-    text = builder.build_from_entry(_entry("hg19"))
-    for line in text.splitlines()[1:]:
-        assert line.split("\t")[3] == ""  # ensembl column empty everywhere
+def test_hg19_ensembl_is_evidence_backed_not_inferred_from_assembly_names():
+    e = _entry("hg19")
+    rows = _raw_rows(e)
+    assert not any("ensembl" in source for _, _, source in rows)  # upstream
+    text = builder.build_from_entry(e)
+    with_ensembl = [line.split("\t") for line in text.splitlines()[1:]
+                    if line.split("\t")[3]]
+    assert len(with_ensembl) == 84  # derived from the pinned evidence
+    # Without the pinned evidence no Ensembl alias exists at all.
+    bare = copy.deepcopy(e)
+    del bare["ensembl_evidence"]
+    assert all(line.split("\t")[3] == ""
+               for line in builder.build_from_entry(bare).splitlines()[1:])

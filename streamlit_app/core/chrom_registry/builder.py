@@ -139,9 +139,19 @@ def _apply_corrections(rows, corrections):
     return out
 
 
-def build_registry(rows, assembly_id: str, corrections=()) -> str:
-    """Validate rows and return the normalized TSV text."""
+def build_registry(rows, assembly_id: str, corrections=(),
+                   ensembl_evidence=None, ensembl_config=None) -> str:
+    """Validate rows and return the normalized TSV text.
+
+    ``ensembl_evidence`` (parsed evidence rows) optionally adds Ensembl
+    aliases verified by exact accession; see ``ensembl_evidence.py``.
+    """
     rows = _apply_corrections(rows, corrections)
+    if ensembl_evidence is not None:
+        from .ensembl_evidence import match_evidence
+        rows = rows + match_evidence(
+            rows, ensembl_evidence,
+            (ensembl_config or {}).get("ucsc_name_disagreements", ()))
     alias_owner: dict[str, str] = {}
     cells: dict[str, dict[str, str]] = {}
     for number, (alias, chrom, source) in enumerate(rows, start=1):
@@ -193,8 +203,20 @@ def build_from_entry(entry: dict, base: Path = PACKAGE_DIR) -> str:
     data = (base / entry["upstream_file"]).read_bytes()
     verify_checksum(data, entry)
     rows = parse_alias_table(data)
+    evidence = None
+    config = entry.get("ensembl_evidence")
+    if config is not None:
+        from .ensembl_evidence import parse_evidence
+        raw = (base / config["evidence_file"]).read_bytes()
+        if sha256_hex(raw) != config["evidence_sha256"]:
+            raise RegistryBuildError(
+                f"{entry['assembly_id']}: Ensembl evidence SHA-256 "
+                f"{sha256_hex(raw)} does not match pinned "
+                f"{config['evidence_sha256']}")
+        evidence = parse_evidence(raw.decode("utf-8"))
     return build_registry(rows, entry["assembly_id"],
-                          entry.get("label_corrections", []))
+                          entry.get("label_corrections", []),
+                          evidence, config)
 
 
 def check(entry: dict, base: Path = PACKAGE_DIR) -> None:

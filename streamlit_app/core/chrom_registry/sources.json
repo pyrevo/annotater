@@ -31,7 +31,35 @@
           "to": "refseq",
           "rationale": "UCSC labels this alias 'genbank' but NC_ is the NCBI RefSeq accession prefix and NCBI nuccore reports NC_001807.4 as a RefSeq record (Homo sapiens mitochondrion, complete genome, 16571 bp, equal to hg19.chrom.sizes chrM). Only the authority label is corrected; the alias string and its association with chrM are unchanged. Reviewed 2026-10-02."
         }
-      ]
+      ],
+      "ensembl_evidence": {
+        "source_url": "https://ftp.ensembl.org/pub/grch37/release-116/mysql/homo_sapiens_core_116_37/",
+        "ensembl_release": 116,
+        "ensembl_db": "homo_sapiens_core_116_37",
+        "ensembl_assembly": "GRCh37.p13",
+        "assembly_accession": "GCA_000001405.14",
+        "coord_system_version": "GRCh37",
+        "retrieved": "2026-10-02",
+        "tables": {
+          "attrib_type.txt.gz": "627275f5dade2d52c63a5705dc2052c3ba8ba247b56230efb21c790a0c72a177",
+          "coord_system.txt.gz": "5e7fa395fa3c922a403b23be2aebef9778fcb11c798c723fc1fbb60933ceeea4",
+          "external_db.txt.gz": "79635b8f904f47af3aeb94d655694d89519a54cec34757fb9f257ef82e1e7283",
+          "seq_region.txt.gz": "0ed7b6ad9080a36ac4ca9119801d1f919328e1139dfe05caab2eedf023e89b3f",
+          "seq_region_attrib.txt.gz": "0e5b3ea1b46395e72614217fcfa5a675f04b74f5c8925a24956e1ac062b89fc7",
+          "seq_region_synonym.txt.gz": "edd0c720dc3a1e862f7aa3030dd72cca348c638a340361a16ca964b9f3ced6f5"
+        },
+        "evidence_file": "upstream/hg19.ensembl-evidence.tsv",
+        "evidence_sha256": "1d53b453580abe3af2d86c82dd86ffb3a23f942163d46836775f91350223a48d",
+        "match_rule": "A top-level Ensembl region adds its name as the ensembl alias of the one hg19 record whose GenBank or RefSeq accession equals the region's INSDC or RefSeq_genomic synonym exactly (versioned). No name matching; assembly aliases are never copied; an accession contradiction, zero/multiple matches, or an explicit upstream ensembl alias is a build error.",
+        "ucsc_name_disagreements": [
+          {
+            "ensembl_name": "MT",
+            "evidence_ucsc": "chrM",
+            "registry_ucsc": "chrMT",
+            "rationale": "Ensembl GRCh37 MT (16569 bp) is identified by RefSeq NC_012920.1, which in the hg19 table belongs to chrMT; Ensembl's own UCSC synonym 'chrM' names a different sequence in UCSC hg19 (chrM = NC_001807.4, 16571 bp). The accession decides identity; the UCSC-name synonym is not used."
+          }
+        ]
+      }
     }
   ]
 }

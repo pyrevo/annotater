@@ -346,6 +346,8 @@ def test_built_wheel_contains_runtime_registry_and_works(tmp_path):
         t = h.resolve("CM000663.1").seq_id
         assert h.render(t, "refseq").alias == "NC_000001.10"
         assert h.resolve("chrM").seq_id != r.resolve("chrM").seq_id
+        assert h.render(h.resolve("chrMT").seq_id, "ensembl").alias == "MT"
+        assert not h.render(h.resolve("chrM").seq_id, "ensembl").rendered
         print(len(r), len(h))
     """)
     run = subprocess.run([sys.executable, "-c", code], cwd=tmp_path,

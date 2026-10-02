@@ -24,12 +24,42 @@ import sys
 import urllib.request
 from datetime import date
 
-from streamlit_app.core.chrom_registry import builder
+from streamlit_app.core.chrom_registry import builder, ensembl_evidence
 
 
 def _fetch(url: str):
     with urllib.request.urlopen(url, timeout=60) as response:
         return response.read(), response.headers.get("Last-Modified", "")
+
+
+def _fetch_ensembl(entry, args, fetch) -> bool:
+    """Compare live pinned Ensembl tables and the derived evidence file.
+    Returns True when the configuration was re-pinned."""
+    config = entry["ensembl_evidence"]
+    tables = {name: fetch(config["source_url"] + name)[0]
+              for name in ensembl_evidence.TABLES}
+    try:
+        ensembl_evidence.verify_tables(tables, config)
+    except builder.RegistryBuildError:
+        if not args.accept_upstream_update:
+            raise
+        config["tables"] = {n: builder.sha256_hex(b)
+                            for n, b in tables.items()}
+        config["retrieved"] = date.today().isoformat()
+        text = ensembl_evidence.extract_evidence(
+            tables, config["coord_system_version"])
+        (builder.PACKAGE_DIR / config["evidence_file"]).write_bytes(
+            text.encode("utf-8"))
+        config["evidence_sha256"] = builder.sha256_hex(text.encode("utf-8"))
+        return True
+    text = ensembl_evidence.extract_evidence(
+        tables, config["coord_system_version"])
+    committed = (builder.PACKAGE_DIR / config["evidence_file"]).read_bytes()
+    if committed != text.encode("utf-8"):
+        raise builder.RegistryBuildError(
+            f"{entry['assembly_id']}: committed Ensembl evidence differs "
+            "from extraction of the pinned tables")
+    return False
 
 
 def run(args, fetch=_fetch) -> int:
@@ -42,6 +72,16 @@ def run(args, fetch=_fetch) -> int:
         name = entry["assembly_id"]
         if args.fetch:
             data, last_modified = fetch(entry["source_url"])
+            repinned = False
+            if entry.get("ensembl_evidence"):
+                repinned = _fetch_ensembl(entry, args, fetch)
+                if repinned:
+                    builder.SOURCES_FILE.write_text(
+                        json.dumps(config, indent=2) + "\n",
+                        encoding="utf-8")
+                    print(f"{name}: Ensembl evidence re-pinned")
+                else:
+                    print(f"{name}: Ensembl evidence unchanged")
             if builder.sha256_hex(data) == entry["sha256"]:
                 print(f"{name}: upstream unchanged")
             elif not args.accept_upstream_update:
