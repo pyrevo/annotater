@@ -1,6 +1,11 @@
 """Core functionality modules"""
 
 from .chromosome import ChromosomeMapper
+from .chromosome_normalization import (
+    ChromosomeNormalizationReport,
+    NormalizationResult,
+    normalize_chromosomes,
+)
 from .coordinates import CoordinateConverter, CoordinateNormalizer
 from .parsers import (
     FormatDetector,
@@ -33,6 +38,9 @@ from .normalization import (
 
 __all__ = [
     "ChromosomeMapper",
+    "ChromosomeNormalizationReport",
+    "NormalizationResult",
+    "normalize_chromosomes",
     "CoordinateConverter",
     "CoordinateNormalizer",
     "FormatDetector",
