@@ -4,6 +4,7 @@ from .chromosome_normalization import (
     ChromosomeNormalizationReport,
     NormalizationResult,
     normalize_chromosomes,
+    normalize_chromosomes_with_registry,
 )
 from .coordinates import CoordinateConverter, CoordinateNormalizer
 from .parsers import (

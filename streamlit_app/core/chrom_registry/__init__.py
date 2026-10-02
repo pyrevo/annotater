@@ -6,6 +6,13 @@ runtime API. Nothing here uses the network. See SPEC 5.1.
 """
 
 from .catalog import AssemblyInfo, assembly_options, load_catalog
+from .custom import (
+    CUSTOM_HEADER,
+    CUSTOM_REGISTRY_NAME,
+    CustomRegistryError,
+    CustomRegistryIssue,
+    load_custom_registry,
+)
 from .loader import (
     AUTHORITIES,
     NO_ALIAS_FOR_TARGET,
@@ -23,10 +30,14 @@ from .loader import (
 
 __all__ = [
     "AUTHORITIES",
+    "CUSTOM_HEADER",
+    "CUSTOM_REGISTRY_NAME",
     "NO_ALIAS_FOR_TARGET",
     "UNKNOWN",
     "AssemblyInfo",
     "ChromosomeRegistry",
+    "CustomRegistryError",
+    "CustomRegistryIssue",
     "RegistryDataError",
     "RegistryError",
     "RenderResult",
@@ -36,5 +47,6 @@ __all__ = [
     "UnsupportedAuthorityError",
     "assembly_options",
     "load_catalog",
+    "load_custom_registry",
     "load_registry",
 ]

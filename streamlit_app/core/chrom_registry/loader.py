@@ -83,10 +83,27 @@ class RenderResult:
 
 
 class ChromosomeRegistry:
-    """Immutable alias registry for a single assembly."""
+    """Immutable alias registry for one set of sequences.
 
-    def __init__(self, assembly_id: str, records: Mapping[str, SequenceRecord]):
+    A bundled registry belongs to one genome assembly (``assembly_id``). A
+    user-supplied (custom) registry has no assembly identity: its
+    ``assembly_id`` is ``None`` and ``name`` says what it is. ``name`` is
+    only a display/source label; it is never a scientific claim.
+    """
+
+    def __init__(
+        self,
+        assembly_id: str | None,
+        records: Mapping[str, SequenceRecord],
+        *,
+        name: str | None = None,
+    ):
+        if assembly_id is None and not name:
+            raise RegistryDataError(
+                "a registry without an assembly id needs a display name"
+            )
         self.assembly_id = assembly_id
+        self.name = name or assembly_id
         self._records = MappingProxyType(dict(records))
         index: dict[str, str] = {}
         for seq_id, record in self._records.items():
@@ -94,7 +111,7 @@ class ChromosomeRegistry:
                 owner = index.setdefault(alias, seq_id)
                 if owner != seq_id:
                     raise RegistryDataError(
-                        f"{assembly_id}: alias {alias!r} belongs to both "
+                        f"{self.name}: alias {alias!r} belongs to both "
                         f"{owner!r} and {seq_id!r}"
                     )
         self._index = MappingProxyType(index)

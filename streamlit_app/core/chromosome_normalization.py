@@ -1,9 +1,12 @@
 """Assembly-aware chromosome identifier normalization for interval tables.
 
-Normalization is alias resolution within one explicit genome assembly
-(SPEC 5.1): every distinct identifier is resolved to a sequence record of
-that assembly and replaced by the record's verified alias for the requested
-target authority. It is not liftover and never touches anything but the
+Normalization is alias resolution within one explicit registry (SPEC 5.1):
+every distinct identifier is resolved to a sequence record of that registry
+and replaced by the record's verified alias for the requested target
+authority. The registry is either a bundled genome assembly
+(``normalize_chromosomes``) or any already-loaded ``ChromosomeRegistry``, for
+example a user-supplied mapping (``normalize_chromosomes_with_registry``);
+both run the same code. It is not liftover and never touches anything but the
 ``chr`` column.
 
 Identifiers that do not resolve (``unknown``) or whose sequence has no alias
@@ -21,6 +24,7 @@ import pandas as pd
 
 from .chrom_registry import (
     AUTHORITIES,
+    ChromosomeRegistry,
     UnsupportedAuthorityError,
     load_registry,
 )
@@ -42,7 +46,7 @@ class StrictChromosomeNormalizationError(ChromosomeNormalizationError):
         self.report = report
         examples = list(report.unknown)[:3] + list(report.no_alias_for_target)[:3]
         super().__init__(
-            f"{report.assembly}/{report.target}: "
+            f"{report.registry_name}/{report.target}: "
             f"{len(report.unknown)} unknown and "
             f"{len(report.no_alias_for_target)} identifiers without a "
             f"{report.target} alias (e.g. {examples})"
@@ -66,7 +70,8 @@ class ChromosomeNormalizationReport:
     rendered to it.
     """
 
-    assembly: str
+    assembly: str | None          # None for a custom (assembly-less) registry
+    registry_name: str            # assembly id, or the custom registry name
     target: str
     total_rows: int
     unique_identifiers: int
@@ -104,17 +109,24 @@ class NormalizationResult:
     report: ChromosomeNormalizationReport
 
 
-def _check_arguments(df, assembly, target) -> None:
+def _check_assembly(assembly) -> None:
     if not isinstance(assembly, str) or not assembly:
         raise ChromosomeNormalizationError(
             "an explicit, non-empty assembly is required; it is never "
             "defaulted or inferred"
         )
+
+
+def _check_target(target) -> None:
     if target not in AUTHORITIES:
         raise UnsupportedAuthorityError(
             f"unsupported target authority {target!r}; "
             f"expected one of {AUTHORITIES}"
         )
+
+
+def _check_arguments(df, target) -> None:
+    _check_target(target)
     if not isinstance(df, pd.DataFrame):
         raise ChromosomeNormalizationError("df must be a pandas DataFrame")
     if CHR_COLUMN not in df.columns:
@@ -145,15 +157,32 @@ def normalize_chromosomes(
     strict: bool = False,
 ) -> NormalizationResult:
     """Render every chromosome identifier of ``df`` as its verified alias for
-    the ``target`` authority within ``assembly``.
+    the ``target`` authority within the bundled ``assembly``.
 
     Returns a new dataframe (the input is not modified) plus a structured
     report. With ``strict=True``, any unknown identifier or missing target
     alias raises ``StrictChromosomeNormalizationError`` carrying the report
     instead of returning a partially normalized table.
     """
-    _check_arguments(df, assembly, target)
-    registry = load_registry(assembly)
+    _check_assembly(assembly)
+    _check_arguments(df, target)
+    return normalize_chromosomes_with_registry(
+        df, registry=load_registry(assembly), target=target, strict=strict)
+
+
+def normalize_chromosomes_with_registry(
+    df: pd.DataFrame,
+    *,
+    registry: ChromosomeRegistry,
+    target: str,
+    strict: bool = False,
+) -> NormalizationResult:
+    """``normalize_chromosomes`` against an already-loaded ``registry``
+    (bundled or user-supplied). Same semantics, report and strict mode."""
+    if not isinstance(registry, ChromosomeRegistry):
+        raise ChromosomeNormalizationError(
+            "registry must be a ChromosomeRegistry")
+    _check_arguments(df, target)
 
     series = df[CHR_COLUMN]
     uniques = list(pd.unique(series)) if len(series) else []
@@ -188,7 +217,8 @@ def normalize_chromosomes(
             changed_rows += counts[identifier]
 
     report = ChromosomeNormalizationReport(
-        assembly=assembly,
+        assembly=registry.assembly_id,
+        registry_name=registry.name,
         target=target,
         total_rows=len(df),
         unique_identifiers=len(uniques),
