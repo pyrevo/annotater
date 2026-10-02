@@ -58,9 +58,13 @@ def _frozen(mapping) -> Mapping:
 class ChromosomeNormalizationReport:
     """Immutable outcome of one normalization, at unique-identifier level.
 
-    ``unknown`` and ``no_alias_for_target`` map each unresolved source
-    identifier to its row count. ``collapses`` maps a target alias to the
-    (two or more) distinct source identifiers that were rendered to it.
+    ``renames`` maps each source identifier whose string actually changed to
+    its target alias (resolved-unchanged and unresolved identifiers are
+    absent); it is the single source of truth for downstream metadata
+    reconciliation. ``unknown`` and ``no_alias_for_target`` map each
+    unresolved source identifier to its row count. ``collapses`` maps a
+    target alias to the (two or more) distinct source identifiers that were
+    rendered to it.
     """
 
     assembly: str
@@ -70,6 +74,7 @@ class ChromosomeNormalizationReport:
     resolved_changed_identifiers: int
     resolved_unchanged_identifiers: int
     changed_rows: int
+    renames: Mapping[str, str]
     unknown: Mapping[str, int]
     no_alias_for_target: Mapping[str, int]
     collapses: Mapping[str, tuple[str, ...]]
@@ -162,6 +167,7 @@ def normalize_chromosomes(
     no_alias: dict[str, int] = {}
     sources_by_target: dict[str, list[str]] = {}
     changed = unchanged = changed_rows = 0
+    sources_changed: set[str] = set()
     for identifier in uniques:
         resolved = registry.resolve(identifier)
         if not resolved.resolved:
@@ -179,6 +185,7 @@ def normalize_chromosomes(
             unchanged += 1
         else:
             changed += 1
+            sources_changed.add(identifier)
             changed_rows += counts[identifier]
 
     report = ChromosomeNormalizationReport(
@@ -189,6 +196,8 @@ def normalize_chromosomes(
         resolved_changed_identifiers=changed,
         resolved_unchanged_identifiers=unchanged,
         changed_rows=changed_rows,
+        renames=_frozen({i: a for i, a in replacement.items()
+                         if i in sources_changed}),
         unknown=_frozen(unknown),
         no_alias_for_target=_frozen(no_alias),
         collapses=_frozen({alias: tuple(sources)

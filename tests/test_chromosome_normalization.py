@@ -406,3 +406,28 @@ def test_same_string_normalizes_differently_per_assembly():
                                ("GRCz11", "NC_007112.7")):
         assert chrs(norm(["chr1"], assembly, "refseq")) == [expected]
     assert chrs(norm(["chr1"], "dm6", "refseq")) == ["chr1"]  # unknown in dm6
+
+
+# --- rename map (single source of truth for downstream metadata) ----------------------------
+
+def test_renames_contain_only_actual_string_changes():
+    result = norm(["1", "chr1", "chr1", "custom", "chr10_GL383545v1_alt"],
+                  "GRCh38", "ucsc")
+    # chr1 and chr10_GL383545v1_alt are resolved but already UCSC; custom
+    # is unknown: none of them is a rename.
+    assert dict(result.report.renames) == {"1": "chr1"}
+    assert list(result.report.renames) == ["1"]
+
+
+def test_renames_exclude_unresolved_and_missing_target_aliases():
+    result = norm(["chrM", "x", "chr1"], "hg19", "ensembl")
+    assert dict(result.report.renames) == {"chr1": "1"}  # chrM: no alias
+    assert dict(norm(["chr1"], "GRCh38", "ucsc").report.renames) == {}
+
+
+def test_renames_are_deterministic_and_read_only():
+    a = norm(["2", "1", "chr3"], "GRCh38", "ucsc").report.renames
+    b = norm(["2", "1", "chr3"], "GRCh38", "ucsc").report.renames
+    assert list(a) == list(b) == ["2", "1"]  # first appearance
+    with pytest.raises(TypeError):
+        a["9"] = "chr9"

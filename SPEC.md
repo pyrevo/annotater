@@ -80,6 +80,7 @@ Chromosome identifier normalization is **alias resolution within an explicit gen
 10. **Runtime determinism.** Runtime normalization MUST NOT use the network. It MUST depend only on version-controlled registry resources whose upstream sources, checksums and provenance are recorded.
 11. **Naming-style detection is advisory.** Any UCSC/Ensembl/NCBI-style detection is user-experience metadata only. It MUST NOT establish sequence identity or drive a conversion independently of the registry.
 12. **Registry build-time integrity.** A registry builder MUST fail (not silently correct) on conflicting or duplicate aliases, on more than one alias per sequence per rendered authority in a representation that cannot hold them, and on upstream data whose checksum differs from the pinned value unless an explicit update is requested.
+13. **Collapse.** If two or more distinct source identifiers are rendered to the same target identifier, normalization MUST report it (source identifiers per target). Exports that carry per-identifier metadata (for example VCF `##contig` declarations) MAY merge the colliding declarations only if all their attributes other than the identifier are identical; otherwise they MUST fail with the conflicting attributes identified, and MUST NOT silently keep one declaration or discard metadata.
 
 Existing `ChromosomeMapper` behavior predates this contract and is superseded by it; it remains in service only until the registry-backed implementation replaces it.
 

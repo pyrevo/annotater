@@ -41,6 +41,10 @@ from streamlit_app.core import (
     parse_and_normalize,
     CanonicalSchemaError,
 )
+from streamlit_app.core.vcf_contigs import (
+    ChromosomeContigCollisionError,
+    reconcile_contig_lines,
+)
 from streamlit_app.core.engine_registry import (
     DEFAULT_ENGINE,
     ENGINE_OPTIONS,
@@ -1087,13 +1091,22 @@ def _render_downloads(
             "INFO as declared ANNOT_* entries. One record per "
             "query-annotation pair. Shown only when the coordinate input is VCF."
         )
-        st.download_button(
-            "Annotated VCF",
-            data=convert_df_to_vcf(
+        try:
+            vcf_data = convert_df_to_vcf(
                 display_df,
                 original_header_lines=vcf_header_lines,
                 contig_renames=vcf_contig_renames,
-            ),
+            )
+        except ChromosomeContigCollisionError as exc:
+            st.error(
+                "Annotated VCF export is unavailable: chromosome "
+                "standardization merged ##contig declarations with "
+                f"conflicting metadata ({exc})."
+            )
+            return
+        st.download_button(
+            "Annotated VCF",
+            data=vcf_data,
             file_name="annotated_variants.vcf",
             mime="application/octet-stream",
             key="download_vcf",
@@ -1371,37 +1384,8 @@ def _original_header_declarations(original_header_lines) -> dict:
     return decls
 
 
-_CONTIG_ID_RE = re.compile(r'(?<=[<,])ID=("?)([^,>"]*)\1')
-
-
-def _reconcile_contig_lines(lines, contig_renames) -> list:
-    """
-    Rename the ID of ``##contig`` lines whose identifier was converted
-    (``contig_renames``: old -> new), changing nothing else on the line.
-    A line that is renamed onto an ID already declared earlier is dropped,
-    so a contig ID is never declared twice. Without renames the lines are
-    returned untouched.
-    """
-    if not contig_renames:
-        return list(lines)
-    out = []
-    declared = set()
-    for line in lines:
-        if line.startswith("##contig=<"):
-            m = _CONTIG_ID_RE.search(line)
-            if m:
-                new_id = contig_renames.get(m.group(2), m.group(2))
-                if new_id != m.group(2):
-                    line = (
-                        line[:m.start()]
-                        + f"ID={m.group(1)}{new_id}{m.group(1)}"
-                        + line[m.end():]
-                    )
-                if new_id in declared:
-                    continue
-                declared.add(new_id)
-        out.append(line)
-    return out
+# Collision-safe ##contig reconciliation lives in core (SPEC 5.1).
+_reconcile_contig_lines = reconcile_contig_lines
 
 
 def convert_df_to_vcf(
