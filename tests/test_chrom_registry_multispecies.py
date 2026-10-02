@@ -230,22 +230,16 @@ def test_rn7_ensembl_alias_is_evidence_not_assembly_name():
     assert not any("ensembl" in source for _, _, source in rows)
 
 
-# --- legacy mapper cannot reproduce these registries --------------------------
+# --- facts a human-shaped rewrite would get wrong --------------------------------
 
-def test_legacy_human_mapper_diverges_from_the_registries():
-    from streamlit_app.core.chromosome import ChromosomeMapper
-    legacy = ChromosomeMapper()
+def test_registry_results_that_string_rewriting_cannot_produce():
     fly, fish = load_registry("dm6"), load_registry("GRCz11")
-    # dm6 2L: legacy cannot produce the Ensembl name; the registry does.
-    assert legacy.convert("chr2L", "ucsc", "ensembl") == "chr2L"
+    # dm6: "2L" has no numeric/chr-prefix relationship to rely on.
     assert fly.render(sid(fly, "chr2L"), "ensembl").alias == "2L"
-    assert legacy.convert("2R", "ensembl", "ucsc") == "2R"
     assert fly.render(sid(fly, "2R"), "ucsc").alias == "chr2R"
-    # zebrafish chr23+: legacy leaves them alone.
-    assert legacy.convert("chr25", "ucsc", "ensembl") == "chr25"
+    # zebrafish chromosomes above 22.
     assert fish.render(sid(fish, "chr25"), "ensembl").alias == "25"
-    # dm6 chrM: legacy invents "MT"; the registry has no such alias.
-    assert legacy.convert("chrM", "ucsc", "ensembl") == "MT"
+    # dm6 chrM has no Ensembl alias; a chrM -> MT rewrite would invent one.
     assert not fly.render(sid(fly, "chrM"), "ensembl").rendered
     assert not fly.resolve("MT").resolved
 

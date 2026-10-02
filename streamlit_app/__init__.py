@@ -3,7 +3,7 @@ AnnotateR - Genomic Coordinate Annotation Tool
 
 A web-based tool for annotating genomic coordinates with support for:
 - Multiple file formats (BED, GFF, GTF, VCF, custom)
-- Chromosome ID standardization
+- Chromosome name normalization
 - Coordinate system conversion (0-based vs 1-based)
 - Fast intersection using bedtools
 """

@@ -1,8 +1,7 @@
 """Dataframe-level chromosome normalization (SPEC 5.1).
 
 Expected values come from the pinned registries, never from the code under
-test. The API is a parallel core API; the application still uses
-``ChromosomeMapper``.
+test.
 """
 
 from __future__ import annotations

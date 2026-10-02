@@ -8,8 +8,7 @@ target authority. It is not liftover and never touches anything but the
 
 Identifiers that do not resolve (``unknown``) or whose sequence has no alias
 for the target (``no_alias_for_target``) are kept verbatim and reported; the
-result never implies they were validated. This layer is not connected to the
-application yet; ``ChromosomeMapper`` remains the active implementation.
+result never implies they were validated.
 """
 
 from __future__ import annotations

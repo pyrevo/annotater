@@ -1,7 +1,7 @@
 """Offline tests for the GRCh38 chromosome-alias registry builder (SPEC 5.1).
 
 The builder is build-time tooling only; nothing here touches the network or
-the runtime ``ChromosomeMapper``.
+the runtime normalization.
 """
 
 from __future__ import annotations

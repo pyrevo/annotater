@@ -34,10 +34,7 @@ import pandas as pd
 import pytest
 from streamlit.testing.v1 import AppTest
 
-from streamlit_app.streamlit_app import (
-    _chrom_renames,
-    convert_df_to_vcf,
-)
+from streamlit_app.streamlit_app import convert_df_to_vcf
 
 APP_ENTRYPOINT = Path(__file__).parent.parent / "streamlit_app" / "streamlit_app.py"
 ENGINES = ["Bedtools", "Polars-Bio"]
@@ -92,14 +89,18 @@ def _widget(at: AppTest, etype: str, key: str):
     raise KeyError(f"no {etype} with key {key!r}")
 
 
-def _app_export(query: bytes, annot: bytes, engine: str = "Bedtools") -> str:
+def _app_export(query: bytes, annot: bytes, engine: str = "Bedtools",
+                assembly: str = "Human \u2014 GRCh38",
+                naming: str = "UCSC names") -> str:
     """
-    Real app path (parse -> chromosome handling -> engine -> state),
+    Real app path (parse -> chromosome naming -> engine -> state),
     then the export exactly as the download button invokes it.
     """
     at = AppTest.from_file(str(APP_ENTRYPOINT), default_timeout=120)
     at.run()
     _widget(at, "radio", "engine").set_value(engine)
+    _widget(at, "selectbox", "chr_assembly").set_value(assembly)
+    _widget(at, "selectbox", "chr_naming").set_value(naming)
     _widget(at, "file_uploader", "coord_file").set_value(
         ("q.vcf", query, "application/octet-stream")
     )
@@ -152,17 +153,22 @@ def _frame(chroms):
 # Provenance: the rename mapping
 # ---------------------------------------------------------------------------
 
-def test_chrom_renames_records_only_changed_identifiers():
-    before = pd.Series(["1", "X", "MT", "scaffold_9", "1"])
-    after = pd.Series(["chr1", "chrX", "chrM", "scaffold_9", "chr1"])
-    assert _chrom_renames(before, after) == {
-        "1": "chr1", "X": "chrX", "MT": "chrM",
-    }
+def test_renames_come_from_the_normalization_report_only_for_changes():
+    from streamlit_app.core import normalize_chromosomes
+    df = pd.DataFrame({"chr": ["1", "X", "MT", "scaffold_9", "1"],
+                       "start": [1] * 5, "end": [2] * 5})
+    report = normalize_chromosomes(df, assembly="GRCh38",
+                                   target="ucsc").report
+    assert dict(report.renames) == {"1": "chr1", "X": "chrX", "MT": "chrM"}
 
 
-def test_chrom_renames_empty_when_nothing_converted():
-    s = pd.Series(["chr1", "chr2"])
-    assert _chrom_renames(s, s.copy()) == {}
+def test_no_renames_when_nothing_is_converted():
+    from streamlit_app.core import normalize_chromosomes
+    df = pd.DataFrame({"chr": ["chr1", "chr2"], "start": [1, 1],
+                       "end": [2, 2]})
+    report = normalize_chromosomes(df, assembly="GRCh38",
+                                   target="ucsc").report
+    assert dict(report.renames) == {}
 
 
 # ---------------------------------------------------------------------------
@@ -360,7 +366,7 @@ class TestAppEndToEnd:
     def test_ucsc_query_ensembl_annotation_is_standardized_to_ucsc(
         self, engine
     ):
-        # Auto-convert always standardizes to UCSC: a UCSC query is not
+        # Normalizing to UCSC names: a UCSC query is not
         # renamed, so its declarations stay untouched.
         query = (
             "##fileformat=VCFv4.2\n##contig=<ID=chr1,length=10>\n"

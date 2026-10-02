@@ -170,7 +170,10 @@ class TestFilterOnBothBackends:
         assert any("No annotations match" in w.value for w in at.warning)
 
     def test_ensembl_noncoding(self, engine):
-        at = _run([TRANSCRIPT], engine, ("annot.gff", ENSEMBL_NONCODING))
+        # Ensembl-style names in both files: this test is about the feature
+        # filter, so no chromosome normalization is involved.
+        at = _run([TRANSCRIPT], engine, ("annot.gff", ENSEMBL_NONCODING),
+                  query=b"1\t0\t10000\tq1\n")
         assert _features(at) == ["lnc_RNA"]
 
     def test_refseq_coding(self, engine):

@@ -1,6 +1,6 @@
 """Runtime registry API (resolve / render) over the packaged GRCh38 registry.
 
-Disconnected from ``ChromosomeMapper`` and the app by design (SPEC 5.1).
+Resolve/render API over the packaged registries (SPEC 5.1).
 """
 
 from __future__ import annotations

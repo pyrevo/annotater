@@ -200,6 +200,8 @@ def _run_app(query: bytes, annot: bytes):
     def widget(kind, key):
         return next(e for e in at.get(kind) if getattr(e, "key", None) == key)
 
+    widget("selectbox", "chr_assembly").set_value("Human \u2014 GRCh38")
+    widget("selectbox", "chr_naming").set_value("UCSC names")
     widget("file_uploader", "coord_file").set_value(
         ("q.vcf", query, "application/octet-stream"))
     widget("file_uploader", "annot_file").set_value(
@@ -222,7 +224,10 @@ def test_app_shows_an_error_instead_of_dropping_conflicting_contigs():
     contigs = "##contig=<ID=1,length=100>\n##contig=<ID=chr1,length=101>\n"
     at = _run_app((_VCF_HEAD.format(contigs=contigs) + _ROWS).encode(), _GFF)
     assert not at.exception
-    assert any("conflicting metadata" in e.value for e in at.error)
+    messages = [e.value for e in at.error]
+    assert any("contig metadata disagree (length)" in m
+               and "1, chr1" in m and "(chr1)" in m
+               and "cannot safely choose" in m for m in messages)
     assert not [b for b in at.get("download_button")
                 if getattr(b, "key", None) == "download_vcf"]
 
