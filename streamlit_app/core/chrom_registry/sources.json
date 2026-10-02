@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "assemblies": [
+    {
+      "assembly_id": "GRCh38",
+      "ucsc_db": "hg38",
+      "source_url": "https://hgdownload.soe.ucsc.edu/goldenPath/hg38/database/chromAlias.txt.gz",
+      "source_format": "ucsc-chromAlias-table: alias<TAB>chrom<TAB>source",
+      "upstream_file": "upstream/hg38.chromAlias.txt.gz",
+      "sha256": "43aac315a93939c54d8b168ea8118fb7760b5e7ff8653f59dd712cfc7467be56",
+      "upstream_last_modified": "Tue, 24 Jan 2023 20:46:47 GMT",
+      "retrieved": "2026-10-02",
+      "registry_file": "data/GRCh38.tsv",
+      "label_corrections": []
+    }
+  ]
+}

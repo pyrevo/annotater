@@ -64,6 +64,25 @@ Format-specific coordinates MUST be normalized before engine execution. BED alre
 
 The implementation MUST contain boundary tests capable of detecting one-base coordinate errors.
 
+### 5.1 Chromosome identifier normalization
+
+Chromosome identifier normalization is **alias resolution within an explicit genome assembly**. It is not string rewriting. Conceptually: an input identifier is resolved within one assembly to one sequence record, and a verified alias of that same record is rendered for the requested naming authority (for example UCSC, Ensembl, RefSeq, GenBank, assembly-native).
+
+1. **Assembly-aware identity.** Sequence identity is defined by the selected assembly's version-controlled alias registry. Two identifiers denote the same sequence only if the registry places them on the same record of that assembly. The same string MAY denote different sequences, or no sequence, in different assemblies. In particular, a mitochondrial sequence MUST NOT be assumed identical across assemblies or assembly-naming families merely because the names match (UCSC `hg19` `chrM` is not assumed equivalent to GRCh37 `MT`).
+2. **No liftover.** Normalization MUST NOT change the genome assembly, perform liftover, or convert coordinates, and MUST NOT imply that a naming conversion changes biological coordinates.
+3. **Coordinate invariant.** For normalization, only the chromosome identifier MAY change. `start`, `end`, `strand`, all other fields, row order, and row count MUST NOT change (unless another independently specified operation modifies them).
+4. **No guessing.** Aliases MUST NOT be invented by syntactic rules such as `N` → `chrN` or `chrX` → `X`. A relationship exists only if it is verified in the selected assembly's registry.
+5. **Exact resolution.** Identifier matching is exact (case-sensitive; no trimming beyond what parsers already specify). Accession versions are biologically meaningful: `NC_000001` MUST NOT resolve as `NC_000001.11`.
+6. **Missing target alias.** A sequence MAY resolve while the registry holds no alias for the requested target authority. This MUST be reported distinctly from an unknown identifier (reason `no_alias_for_target`), and no replacement MAY be invented.
+7. **Unknown identifiers.** Unknown or custom identifiers remain unresolved and MUST NOT be reported as validated.
+8. **Partial resolution.** A dataset MAY contain resolvable and unresolvable identifiers. Resolved rows MAY be normalized while unresolved identifiers remain unchanged, provided the result carries structured unresolved status (identifier, reason, affected row count). Unresolved identifiers MUST NOT be indistinguishable from successfully normalized ones.
+9. **Assembly requirement.** The assembly MUST NOT be silently defaulted (for example to GRCh38) or guessed. If the identifiers need no normalization, no assembly is required to run the rest of AnnotateR. If an alias conversion is requested or required, the assembly MUST be explicit.
+10. **Runtime determinism.** Runtime normalization MUST NOT use the network. It MUST depend only on version-controlled registry resources whose upstream sources, checksums and provenance are recorded.
+11. **Naming-style detection is advisory.** Any UCSC/Ensembl/NCBI-style detection is user-experience metadata only. It MUST NOT establish sequence identity or drive a conversion independently of the registry.
+12. **Registry build-time integrity.** A registry builder MUST fail (not silently correct) on conflicting or duplicate aliases, on more than one alias per sequence per rendered authority in a representation that cannot hold them, and on upstream data whose checksum differs from the pinned value unless an explicit update is requested.
+
+Existing `ChromosomeMapper` behavior predates this contract and is superseded by it; it remains in service only until the registry-backed implementation replaces it.
+
 ## 6. Canonical annotation result
 
 For pair-producing operations, the public result MUST distinguish query (`coord_`) and annotation (`annot_`) fields explicitly.
@@ -351,6 +370,8 @@ The parity suite MUST include minimal fixtures for at least:
 - mixed input metadata columns;
 - chromosome naming normalization;
 - coordinate-system boundary conversion.
+
+Registry-backed chromosome naming normalization (SPEC 5.1) is parity-relevant: once it is connected to the runtime, it MUST be covered by representative parity and oracle tests (resolution, rendering, unresolved and partial-resolution reporting, and the coordinate invariant), independent of backend selection. Those tests are not yet present; the current parity and oracle suites do not exercise chromosome normalization.
 
 Minimum-overlap fixtures were added in Task 6A (`tests/parity/test_min_overlap_parity.py`); strand fixtures were added in Task 6B (`tests/parity/test_strand_parity.py`); contains fixtures were added in Task 6C (`tests/parity/test_contains_parity.py`); within fixtures were added in Task 6D (`tests/parity/test_within_parity.py`); closest fixtures were added in Task 6E (`tests/parity/test_closest_parity.py`), including representative closest cases in the differential layer.
 
