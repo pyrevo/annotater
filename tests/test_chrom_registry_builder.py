@@ -341,7 +341,7 @@ def _raw_rows(entry):
 
 
 def test_configured_assemblies():
-    assert ASSEMBLY_IDS == ["GRCh38", "hg19"]
+    assert ASSEMBLY_IDS == ["GRCh38", "hg19", "GRCm39", "dm6", "GRCz11", "rn7"]
 
 
 @pytest.mark.parametrize("assembly_id", ASSEMBLY_IDS)
@@ -451,3 +451,21 @@ def test_hg19_ensembl_is_evidence_backed_not_inferred_from_assembly_names():
     del bare["ensembl_evidence"]
     assert all(line.split("\t")[3] == ""
                for line in builder.build_from_entry(bare).splitlines()[1:])
+
+
+# --- accession shapes ---------------------------------------------------------
+
+@pytest.mark.parametrize("accession", [
+    "CM000663.2", "AE014134.6", "J01415.2", "KI270752.1",
+    "JACYVU010000238.1",   # WGS contig, 6-letter project prefix (rn7)
+    "CP007071.1", "MU150194.1"])
+def test_insdc_accession_shapes_are_accepted_as_genbank(accession):
+    out = builder.build_registry(parse(f"{accession}\tchrX\tgenbank\n"), "T")
+    assert out.splitlines()[1].split("\t")[4] == accession
+
+
+@pytest.mark.parametrize("accession", ["MT", "chr1", "1", "NC_000001.11",
+                                       "AB.1", "ABCDEFG01000001.1"])
+def test_non_insdc_shapes_are_rejected_as_genbank(accession):
+    with pytest.raises(RegistryBuildError):
+        builder.build_registry(parse(f"{accession}\tchrX\tgenbank\n"), "T")

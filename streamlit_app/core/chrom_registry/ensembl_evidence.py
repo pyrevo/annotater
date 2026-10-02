@@ -30,7 +30,10 @@ TABLES = (
     "seq_region_synonym.txt.gz",
 )
 # Ensembl external_db names accepted as synonyms, and the evidence column
-# each fills. Any other synonym source on a selected region is an error.
+# each fills. A synonym with no external database (NULL) carries no
+# authority and is ignored; any other source on a selected region is an
+# error.
+NULL = "\\N"  # MySQL dump NULL
 _SYNONYM_COLUMNS = {"INSDC": "insdc", "RefSeq_genomic": "refseq",
                     "UCSC": "ucsc"}
 
@@ -63,6 +66,8 @@ def extract_evidence(tables, coord_system_version: str) -> str:
     synonyms: dict[str, dict[str, str]] = {}
     for _, sid, synonym, db_id in _table(tables, "seq_region_synonym.txt.gz"):
         if sid not in regions:
+            continue
+        if db_id == NULL:
             continue
         column = _SYNONYM_COLUMNS.get(external.get(db_id))
         if column is None:

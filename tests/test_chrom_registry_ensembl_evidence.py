@@ -132,6 +132,16 @@ def test_extraction_selects_version_flags_toplevel_and_is_sorted():
     ]  # NCBI36 region excluded by coordinate-system version
 
 
+def test_extraction_ignores_synonyms_without_an_external_database():
+    syn = gz([["1", "10", "CM1.1", "50710"], ["2", "10", "NC_1.1", "1830"],
+              ["3", "10", "scaffold_1", "\\N"]])
+    text = ev.extract_evidence(tables(**{"seq_region_synonym.txt.gz": syn}),
+                               "GRCh37")
+    assert text.splitlines()[1].split("\t") == [
+        "1", "chromosome", "1000", "1", "CM1.1", "NC_1.1", ""]
+    assert "scaffold_1" not in text
+
+
 def test_extraction_rejects_unexpected_or_repeated_synonyms():
     extra = gz([["1", "10", "CM1.1", "7"]])
     with pytest.raises(RegistryBuildError, match="unexpected synonym source"):

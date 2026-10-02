@@ -40,7 +40,9 @@ HEADER = ("seq_id",) + AUTHORITIES
 # not be labelled ``refseq``. Applied only to the ``refseq``/``genbank``
 # labels; ``assembly``/``ensembl`` names are never syntax-checked.
 _REFSEQ_RE = re.compile(r"^N[CTWZ]_\d+\.\d+$")
-_GENBANK_RE = re.compile(r"^(?:[A-Z]{1,2}\d{5,6}|[A-Z]{4}\d{8,})\.\d+$")
+# INSDC: classic 1+5 / 2+6 accessions, and WGS/contig accessions (4-6 letter
+# project prefix + version + digits, e.g. JACYVU010000238.1).
+_GENBANK_RE = re.compile(r"^(?:[A-Z]{1,2}\d{5,6}|[A-Z]{4,6}\d{8,})\.\d+$")
 
 
 class RegistryBuildError(ValueError):

@@ -60,6 +60,75 @@
           }
         ]
       }
+    },
+    {
+      "assembly_id": "GRCm39",
+      "ucsc_db": "mm39",
+      "source_url": "https://hgdownload.soe.ucsc.edu/goldenPath/mm39/database/chromAlias.txt.gz",
+      "source_format": "ucsc-chromAlias-table: alias<TAB>chrom<TAB>source",
+      "upstream_file": "upstream/mm39.chromAlias.txt.gz",
+      "sha256": "f1815357649b646ffa2153f9f31a12d7683fd4595999dc42e924741532e6da78",
+      "upstream_last_modified": "Fri, 12 Mar 2021 20:45:37 GMT",
+      "retrieved": "2026-10-02",
+      "registry_file": "data/GRCm39.tsv",
+      "label_corrections": []
+    },
+    {
+      "assembly_id": "dm6",
+      "ucsc_db": "dm6",
+      "source_url": "https://hgdownload.soe.ucsc.edu/goldenPath/dm6/database/chromAlias.txt.gz",
+      "source_format": "ucsc-chromAlias-table: alias<TAB>chrom<TAB>source",
+      "upstream_file": "upstream/dm6.chromAlias.txt.gz",
+      "sha256": "c2909751c7b2df22bdb9eb5a56042e1c359cae6028dc04b433d25dc06737ba7e",
+      "upstream_last_modified": "Sun, 18 Feb 2018 14:17:02 GMT",
+      "retrieved": "2026-10-02",
+      "registry_file": "data/dm6.tsv",
+      "label_corrections": []
+    },
+    {
+      "assembly_id": "GRCz11",
+      "ucsc_db": "danRer11",
+      "source_url": "https://hgdownload.soe.ucsc.edu/goldenPath/danRer11/database/chromAlias.txt.gz",
+      "source_format": "ucsc-chromAlias-table: alias<TAB>chrom<TAB>source",
+      "upstream_file": "upstream/danRer11.chromAlias.txt.gz",
+      "sha256": "1e4344784a998cd59647684e53cd6e0f0822db7b7ebd236c6a52de46e287ee49",
+      "upstream_last_modified": "Sun, 05 Aug 2018 13:11:44 GMT",
+      "retrieved": "2026-10-02",
+      "registry_file": "data/GRCz11.tsv",
+      "label_corrections": []
+    },
+    {
+      "assembly_id": "rn7",
+      "ucsc_db": "rn7",
+      "source_url": "https://hgdownload.soe.ucsc.edu/goldenPath/rn7/database/chromAlias.txt.gz",
+      "source_format": "ucsc-chromAlias-table: alias<TAB>chrom<TAB>source",
+      "upstream_file": "upstream/rn7.chromAlias.txt.gz",
+      "sha256": "1e4981387c51f6f133e392b931417fe8724c6769389a054b86df78bf3cae49f4",
+      "upstream_last_modified": "Thu, 04 Feb 2021 00:54:45 GMT",
+      "retrieved": "2026-10-02",
+      "registry_file": "data/rn7.tsv",
+      "label_corrections": [],
+      "ensembl_evidence": {
+        "source_url": "https://ftp.ensembl.org/pub/release-111/mysql/rattus_norvegicus_core_111_72/",
+        "ensembl_release": 111,
+        "ensembl_db": "rattus_norvegicus_core_111_72",
+        "ensembl_assembly": "mRatBN7.2",
+        "assembly_accession": "GCA_015227675.2",
+        "coord_system_version": "mRatBN7.2",
+        "retrieved": "2026-10-02",
+        "tables": {
+          "attrib_type.txt.gz": "2e0d9b42161eae0b04eaff9756715ee1d3119b0f55951614809c1ad626cb9549",
+          "coord_system.txt.gz": "5ace094e3f059ede8b7fd3b86c13d7bac384ff662fff88f99a5b64bbfb23504b",
+          "external_db.txt.gz": "63737a8fbf3f2cbc137925e255b9475a6f6ffe8800b42096be7623fcf020eefa",
+          "seq_region.txt.gz": "358574eafb8f9166cdd66864128ff82182b232649dcbb13e95731ce42f9641da",
+          "seq_region_attrib.txt.gz": "29be75cd0b4e4264ca2e090293d7fc8b22811cc00ba41d87c8e2937c48685369",
+          "seq_region_synonym.txt.gz": "554177033db29450aa1cbc2ae27274e31df1579c3876078a05bc8a6782aee28d"
+        },
+        "evidence_file": "upstream/rn7.ensembl-evidence.tsv",
+        "evidence_sha256": "ed87e3350d5034c98836aa0ae9b8c848f5a38f4208776f8423951225d8f01786",
+        "match_rule": "A top-level Ensembl region adds its name as the ensembl alias of the one rn7 record whose GenBank or RefSeq accession equals the region's INSDC or RefSeq_genomic synonym exactly (versioned). Release 111 carries mRatBN7.2; current Ensembl rat data (GRCr8) is a different assembly and is never used. No name matching; assembly aliases are never copied; synonyms without an external database are ignored.",
+        "ucsc_name_disagreements": []
+      }
     }
   ]
 }

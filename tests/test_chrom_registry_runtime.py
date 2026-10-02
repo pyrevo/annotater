@@ -330,8 +330,9 @@ def test_built_wheel_contains_runtime_registry_and_works(tmp_path):
     with zipfile.ZipFile(wheel) as zf:
         names = set(zf.namelist())
         zf.extractall(tmp_path / "site")
-    for required in ("sources.json", "data/GRCh38.tsv", "data/hg19.tsv",
-                     "loader.py", "__init__.py"):
+    assemblies = ("GRCh38", "hg19", "GRCm39", "dm6", "GRCz11", "rn7")
+    for required in ("sources.json", "loader.py", "__init__.py",
+                     *(f"data/{a}.tsv" for a in assemblies)):
         assert prefix + required in names, required
 
     code = textwrap.dedent(f"""
@@ -348,9 +349,13 @@ def test_built_wheel_contains_runtime_registry_and_works(tmp_path):
         assert h.resolve("chrM").seq_id != r.resolve("chrM").seq_id
         assert h.render(h.resolve("chrMT").seq_id, "ensembl").alias == "MT"
         assert not h.render(h.resolve("chrM").seq_id, "ensembl").rendered
-        print(len(r), len(h))
+        counts = [len(load_registry(a)) for a in
+                  ("GRCm39", "dm6", "GRCz11", "rn7")]
+        d = load_registry("dm6")
+        assert d.render(d.resolve("2L").seq_id, "ucsc").alias == "chr2L"
+        print(len(r), len(h), *counts)
     """)
     run = subprocess.run([sys.executable, "-c", code], cwd=tmp_path,
                          capture_output=True, text=True, check=False)
     assert run.returncode == 0, run.stderr
-    assert run.stdout.strip() == "711 298"
+    assert run.stdout.strip() == "711 298 61 1870 1923 176"
