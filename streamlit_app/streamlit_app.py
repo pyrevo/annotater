@@ -40,6 +40,7 @@ from streamlit_app.core import (
     parse_and_normalize,
     CanonicalSchemaError,
 )
+from streamlit_app.core.chrom_registry import assembly_options, load_catalog
 from streamlit_app.core.chromosome_inputs import normalize_input_chromosomes
 from streamlit_app.core.vcf_contigs import (
     ChromosomeContigCollisionError,
@@ -119,18 +120,13 @@ _COORD_SYSTEM_OPTIONS = [
 ]
 
 # Genome assemblies offered for chromosome-name normalization: display
-# label -> assembly id. The label names the species only for the reader;
-# nothing is inferred from it or from the input files.
+# label -> assembly id, read from the bundled catalog metadata (UCSC values,
+# unique labels, fixed presentation order). Nothing is inferred from a label
+# or from the input files, and no registry is loaded to build the list.
 _ASSEMBLY_PLACEHOLDER = "Select genome assembly"
-_ASSEMBLY_OPTIONS = {
-    "Human \u2014 GRCh38": "GRCh38",
-    "Human \u2014 hg19": "hg19",
-    "Mouse \u2014 GRCm39": "GRCm39",
-    "Fruit fly \u2014 dm6": "dm6",
-    "Zebrafish \u2014 GRCz11": "GRCz11",
-    "Rat \u2014 mRatBN7.2 (rn7)": "rn7",
-}
+_ASSEMBLY_OPTIONS = assembly_options()
 _ASSEMBLY_LABELS = {v: k for k, v in _ASSEMBLY_OPTIONS.items()}
+_ASSEMBLY_INFO = {info.assembly_id: info for info in load_catalog()}
 
 # Chromosome naming choices: display label -> naming system (None = keep
 # the names exactly as provided).
@@ -492,7 +488,9 @@ def render_sidebar() -> dict:
                 "Chromosome names can refer to different sequences in "
                 "different genome assemblies. Select the assembly used by "
                 "your input files so AnnotateR can normalize names safely. "
-                "Not needed when names are kept as they are."
+                "Click the list and type to search by species, assembly or "
+                "UCSC name (for example human, mm10, canFam3). Not needed "
+                "when names are kept as they are."
             ),
         )
         chr_naming_label = st.selectbox(
@@ -505,6 +503,11 @@ def render_sidebar() -> dict:
             ),
         )
         chr_assembly = _ASSEMBLY_OPTIONS.get(chr_assembly_label)
+        if chr_assembly is not None:
+            info = _ASSEMBLY_INFO[chr_assembly]
+            st.caption(" \u00b7 ".join(
+                part for part in (info.scientific_name,
+                                  f"UCSC {info.ucsc_db}") if part))
         chr_naming = _NAMING_OPTIONS[chr_naming_label]
         if chr_naming is not None and chr_assembly is None:
             st.warning(_ASSEMBLY_REQUIRED_MESSAGE)

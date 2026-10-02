@@ -211,7 +211,7 @@ def test_the_app_normalizes_once_and_both_engines_receive_the_same_tables(
         at = AppTest.from_file(str(entry), default_timeout=120)
         at.run()
         widget(at, "radio", "engine").set_value(engine)
-        widget(at, "selectbox", "chr_assembly").set_value("Human — hg19")
+        widget(at, "selectbox", "chr_assembly").set_value("Human — Feb. 2009 (GRCh37/hg19)")
         widget(at, "selectbox", "chr_naming").set_value("Ensembl names")
         widget(at, "file_uploader", "coord_file").set_value(
             ("q.bed", b"chrM\t0\t100\tq0\nchrMT\t0\t100\tq1\n", "text/plain"))

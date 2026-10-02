@@ -90,7 +90,7 @@ def _widget(at: AppTest, etype: str, key: str):
 
 
 def _app_export(query: bytes, annot: bytes, engine: str = "Bedtools",
-                assembly: str = "Human \u2014 GRCh38",
+                assembly: str = "Human \u2014 Dec. 2013 (GRCh38/hg38)",
                 naming: str = "UCSC names") -> str:
     """
     Real app path (parse -> chromosome naming -> engine -> state),

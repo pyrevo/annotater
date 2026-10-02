@@ -26,9 +26,9 @@ from streamlit.testing.v1 import AppTest
 
 APP_ENTRYPOINT = Path(__file__).parent.parent / "streamlit_app" / "streamlit_app.py"
 
-GRCH38 = "Human — GRCh38"
-HG19 = "Human — hg19"
-DM6 = "Fruit fly — dm6"
+GRCH38 = "Human — Dec. 2013 (GRCh38/hg38)"
+HG19 = "Human — Feb. 2009 (GRCh37/hg19)"
+DM6 = "D. melanogaster — Aug. 2014 (BDGP Release 6 + ISO1 MT/dm6)"
 UCSC = "UCSC names"
 ENSEMBL = "Ensembl names"
 
@@ -97,11 +97,15 @@ def test_controls_are_plain_language_with_no_preselected_assembly():
     naming = _widget(at, "selectbox", "chr_naming")
     assert assembly.label == "Genome assembly"
     assert naming.label == "Chromosome naming"
-    assert list(assembly.options) == [
-        "Select genome assembly",
-        "Human — GRCh38", "Human — hg19", "Mouse — GRCm39",
-        "Fruit fly — dm6", "Zebrafish — GRCz11",
-        "Rat — mRatBN7.2 (rn7)"]
+    options = list(assembly.options)
+    assert options[0] == "Select genome assembly"
+    # the catalog-driven list (details: tests/test_assembly_selector.py);
+    # the six deeply validated assemblies are all offered and understandable
+    assert len(options) == 1 + 64
+    for label in (GRCH38, HG19, "Mouse \u2014 Jun. 2020 (GRCm39/mm39)",
+                  DM6, "Zebrafish \u2014 May 2017 (GRCz11/danRer11)",
+                  "Rat \u2014 Nov. 2020 (mRatBN7.2/rn7)"):
+        assert label in options
     assert assembly.value == "Select genome assembly"  # nothing implied
     assert list(naming.options) == [
         "Keep original names", "UCSC names", "Ensembl names",
@@ -117,9 +121,9 @@ def test_controls_are_plain_language_with_no_preselected_assembly():
 
 
 def test_every_supported_assembly_is_offered_and_nothing_else():
-    from streamlit_app.core.chrom_registry import builder
+    from streamlit_app.core.chrom_registry import load_catalog
     from streamlit_app.streamlit_app import _ASSEMBLY_OPTIONS
-    configured = [e["assembly_id"] for e in builder.load_sources()["assemblies"]]
+    configured = [i.assembly_id for i in load_catalog()]
     assert sorted(_ASSEMBLY_OPTIONS.values()) == sorted(configured)
 
 
@@ -196,7 +200,7 @@ def test_unrecognized_names_are_reported_not_presented_as_normalized():
                if e.label == "Chromosome normalization details"]
     assert details
     text = " ".join(m.value for m in details[0].markdown)
-    assert "Not recognized in Human — GRCh38: mystery (1 rows)" in text
+    assert "Not recognized in Human — Dec. 2013 (GRCh38/hg38): mystery (1 rows)" in text
     assert "no verified name is available" not in text
 
 

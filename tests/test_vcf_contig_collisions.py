@@ -202,7 +202,7 @@ def _run_app(query: bytes, annot: bytes, engine: str | None = None):
 
     if engine is not None:
         widget("radio", "engine").set_value(engine)
-    widget("selectbox", "chr_assembly").set_value("Human \u2014 GRCh38")
+    widget("selectbox", "chr_assembly").set_value("Human \u2014 Dec. 2013 (GRCh38/hg38)")
     widget("selectbox", "chr_naming").set_value("UCSC names")
     widget("file_uploader", "coord_file").set_value(
         ("q.vcf", query, "application/octet-stream"))
