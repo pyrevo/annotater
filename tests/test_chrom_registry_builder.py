@@ -294,12 +294,16 @@ def test_cli_fetch_drift_is_hard_stop_without_accept(entry):
         update_chrom_aliases.run(args, fetch=lambda url: (gz(GOOD), "x"))
 
 
-def test_cli_fetch_unchanged_is_ok(entry, capsys):
-    data = (builder.PACKAGE_DIR / entry["upstream_file"]).read_bytes()
+def test_cli_fetch_unchanged_is_ok(capsys):
+    config = builder.load_sources()
+    by_url = {e["source_url"]:
+              (builder.PACKAGE_DIR / e["upstream_file"]).read_bytes()
+              for e in config["assemblies"]}
     args = _Args()
     args.fetch = True
-    assert update_chrom_aliases.run(args, fetch=lambda url: (data, "x")) == 0
-    assert "unchanged" in capsys.readouterr().out
+    assert update_chrom_aliases.run(
+        args, fetch=lambda url: (by_url[url], "x")) == 0
+    assert capsys.readouterr().out.count("upstream unchanged") == len(by_url)
 
 
 def test_accept_upstream_repins_in_isolation(entry, tmp_path):
@@ -313,3 +317,117 @@ def test_accept_upstream_repins_in_isolation(entry, tmp_path):
     with pytest.raises(RegistryBuildError):
         builder.accept_upstream(local, b"garbage", "x", "y", tmp_path)
     assert entry["sha256"] != local["sha256"]  # original config untouched
+
+
+# --- every configured assembly ----------------------------------------------
+
+ASSEMBLY_IDS = [e["assembly_id"] for e in builder.load_sources()["assemblies"]]
+
+
+def _entry(assembly_id):
+    return builder.get_assembly(builder.load_sources(), assembly_id)
+
+
+def _raw_rows(entry):
+    return builder.parse_alias_table(
+        (builder.PACKAGE_DIR / entry["upstream_file"]).read_bytes())
+
+
+def test_configured_assemblies():
+    assert ASSEMBLY_IDS == ["GRCh38", "hg19"]
+
+
+@pytest.mark.parametrize("assembly_id", ASSEMBLY_IDS)
+def test_each_assembly_is_pinned_deterministic_and_checked(assembly_id):
+    e = _entry(assembly_id)
+    data = (builder.PACKAGE_DIR / e["upstream_file"]).read_bytes()
+    assert builder.sha256_hex(data) == e["sha256"]
+    assert e["source_url"].endswith(
+        f"/goldenPath/{e['ucsc_db']}/database/chromAlias.txt.gz")
+    assert e["registry_file"] == f"data/{assembly_id}.tsv"
+    first = builder.build_from_entry(e)
+    assert first == builder.build_from_entry(e)
+    assert (builder.PACKAGE_DIR / e["registry_file"]).read_bytes() == \
+        first.encode("utf-8")
+    builder.check(e)
+
+
+@pytest.mark.parametrize("assembly_id", ASSEMBLY_IDS)
+def test_wide_schema_is_lossless_and_corrections_invent_nothing(assembly_id):
+    e = _entry(assembly_id)
+    rows = _raw_rows(e)
+    text = builder.build_from_entry(e)
+    out_pairs, cells = set(), {}
+    for line in text.splitlines()[1:]:
+        f = line.split("\t")
+        record = dict(zip(builder.SOURCE_LABELS, f[2:]))
+        cells[f[1]] = record
+        out_pairs |= {(a, f[1]) for a in record.values() if a}
+    # Every alias->sequence association comes from upstream, none added,
+    # none dropped (a correction moves an alias between columns only).
+    assert out_pairs == {(a, c) for a, c, _ in rows}
+    assert len({c for _, c, _ in rows}) == len(cells)
+    corrected = {(c["alias"], c["chrom"]): c["to"]
+                 for c in e["label_corrections"]}
+    for alias, chrom, source in rows:
+        labels = [corrected.get((alias, chrom), source)] \
+            if (alias, chrom) in corrected else source.split(",")
+        for label in labels:
+            assert cells[chrom][label] == alias
+
+
+def test_input_row_order_does_not_change_hg19_output():
+    e = _entry("hg19")
+    rows = _raw_rows(e)
+    a = builder.build_registry(rows, "hg19", e["label_corrections"])
+    b = builder.build_registry(list(reversed(rows)), "hg19",
+                               e["label_corrections"])
+    assert a == b
+
+
+# --- hg19: explicit, reviewed source-label correction -------------------------
+
+def test_hg19_raw_upstream_row_has_inconsistent_label():
+    rows = _raw_rows(_entry("hg19"))
+    assert ("NC_001807.4", "chrM", "genbank") in rows
+
+
+def test_hg19_correction_is_explicit_and_documented():
+    (corr,) = _entry("hg19")["label_corrections"]
+    assert (corr["alias"], corr["chrom"], corr["from"], corr["to"]) == (
+        "NC_001807.4", "chrM", "genbank", "refseq")
+    assert "RefSeq" in corr["rationale"] and "16571" in corr["rationale"]
+    assert _entry("GRCh38")["label_corrections"] == []
+
+
+def test_hg19_build_fails_without_the_correction():
+    e = copy.deepcopy(_entry("hg19"))
+    e["label_corrections"] = []
+    with pytest.raises(RegistryBuildError, match="RefSeq-style accession"):
+        builder.build_from_entry(e)
+
+
+@pytest.mark.parametrize("field,value", [
+    ("from", "refseq"), ("alias", "NC_001807.5"), ("chrom", "chrM2"),
+])
+def test_hg19_stale_or_mismatched_correction_fails(field, value):
+    e = copy.deepcopy(_entry("hg19"))
+    e["label_corrections"][0][field] = value
+    with pytest.raises(RegistryBuildError, match="matched no upstream row"):
+        builder.build_from_entry(e)
+
+
+def test_hg19_normalized_registry_carries_corrected_authority():
+    lines = builder.build_from_entry(_entry("hg19")).splitlines()
+    (chrm,) = [line for line in lines if line.startswith("hg19:chrM\t")]
+    # seq_id ucsc assembly ensembl genbank refseq
+    assert chrm.split("\t") == [
+        "hg19:chrM", "chrM", "", "", "", "NC_001807.4"]
+
+
+def test_hg19_ensembl_is_not_inferred_from_assembly_names():
+    rows = _raw_rows(_entry("hg19"))
+    assert not any("ensembl" in source for _, _, source in rows)
+    text = builder.build_from_entry(_entry("hg19"))
+    for line in text.splitlines()[1:]:
+        assert line.split("\t")[3] == ""  # ensembl column empty everywhere

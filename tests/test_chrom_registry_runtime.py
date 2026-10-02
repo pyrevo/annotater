@@ -66,9 +66,9 @@ def test_load_is_cached_and_independent_of_cwd(tmp_path, monkeypatch):
     assert fresh is not first and len(fresh) == len(first)
 
 
-@pytest.mark.parametrize("name", ["hg38", "grch38", "GRCh37", "hg19", "", "x"])
+@pytest.mark.parametrize("name", ["hg38", "grch38", "GRCh37", "HG19", "", "x"])
 def test_unsupported_assembly_fails_clearly_without_fallback(name):
-    with pytest.raises(UnsupportedAssemblyError, match="GRCh38"):
+    with pytest.raises(UnsupportedAssemblyError, match="GRCh38.*hg19"):
         load_registry(name)
 
 
@@ -330,8 +330,8 @@ def test_built_wheel_contains_runtime_registry_and_works(tmp_path):
     with zipfile.ZipFile(wheel) as zf:
         names = set(zf.namelist())
         zf.extractall(tmp_path / "site")
-    for required in ("sources.json", "data/GRCh38.tsv", "loader.py",
-                     "__init__.py"):
+    for required in ("sources.json", "data/GRCh38.tsv", "data/hg19.tsv",
+                     "loader.py", "__init__.py"):
         assert prefix + required in names, required
 
     code = textwrap.dedent(f"""
@@ -342,9 +342,13 @@ def test_built_wheel_contains_runtime_registry_and_works(tmp_path):
         r = load_registry("GRCh38")
         s = r.resolve("CM000663.2").seq_id
         assert r.render(s, "refseq").alias == "NC_000001.11"
-        print(len(r))
+        h = load_registry("hg19")
+        t = h.resolve("CM000663.1").seq_id
+        assert h.render(t, "refseq").alias == "NC_000001.10"
+        assert h.resolve("chrM").seq_id != r.resolve("chrM").seq_id
+        print(len(r), len(h))
     """)
     run = subprocess.run([sys.executable, "-c", code], cwd=tmp_path,
                          capture_output=True, text=True, check=False)
     assert run.returncode == 0, run.stderr
-    assert run.stdout.strip() == "711"
+    assert run.stdout.strip() == "711 298"

@@ -12,6 +12,26 @@
       "retrieved": "2026-10-02",
       "registry_file": "data/GRCh38.tsv",
       "label_corrections": []
+    },
+    {
+      "assembly_id": "hg19",
+      "ucsc_db": "hg19",
+      "source_url": "https://hgdownload.soe.ucsc.edu/goldenPath/hg19/database/chromAlias.txt.gz",
+      "source_format": "ucsc-chromAlias-table: alias<TAB>chrom<TAB>source",
+      "upstream_file": "upstream/hg19.chromAlias.txt.gz",
+      "sha256": "61c4b593b9f0080518d898e4f4171905bffcbd6aed6d48c4e266234dd11436da",
+      "upstream_last_modified": "Sun, 22 Mar 2020 10:27:54 GMT",
+      "retrieved": "2026-10-02",
+      "registry_file": "data/hg19.tsv",
+      "label_corrections": [
+        {
+          "alias": "NC_001807.4",
+          "chrom": "chrM",
+          "from": "genbank",
+          "to": "refseq",
+          "rationale": "UCSC labels this alias 'genbank' but NC_ is the NCBI RefSeq accession prefix and NCBI nuccore reports NC_001807.4 as a RefSeq record (Homo sapiens mitochondrion, complete genome, 16571 bp, equal to hg19.chrom.sizes chrM). Only the authority label is corrected; the alias string and its association with chrM are unchanged. Reviewed 2026-10-02."
+        }
+      ]
     }
   ]
 }
