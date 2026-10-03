@@ -93,6 +93,39 @@ def _attributes_without_id(line: str) -> dict[str, tuple[str, ...]]:
     return {k: tuple(sorted(v)) for k, v in attrs.items()}
 
 
+def declared_contig_ids(lines) -> list[str]:
+    """The distinct contig IDs declared in ``##contig`` lines, in order of
+    first declaration (lines without a usable ``ID`` are skipped)."""
+    seen: dict[str, None] = {}
+    for line in lines:
+        if line.startswith("##contig=<"):
+            found = _find_id(line)
+            if found:
+                seen.setdefault(found[3])
+    return list(seen)
+
+
+def header_contig_renames(lines, registry, target: str) -> dict[str, str]:
+    """``{declared ID: new ID}`` for every ``##contig`` ID of the header that
+    the ``registry`` resolves and renders for ``target`` under a different
+    name, whether or not any data row uses that contig.
+
+    Each ID goes through the same ``registry.resolve`` / ``registry.render``
+    contract as dataframe normalization. IDs that are unknown or whose
+    sequence has no ``target`` alias are absent (kept as declared); nothing
+    is guessed or rewritten by pattern.
+    """
+    renames = {}
+    for identifier in declared_contig_ids(lines):
+        resolved = registry.resolve(identifier)
+        if not resolved.resolved:
+            continue
+        rendered = registry.render(resolved.seq_id, target)
+        if rendered.rendered and rendered.alias != identifier:
+            renames[identifier] = rendered.alias
+    return renames
+
+
 def reconcile_contig_lines(lines, contig_renames: Mapping[str, str] | None):
     """Apply ``contig_renames`` (old -> new ID) to ``##contig`` lines.
 

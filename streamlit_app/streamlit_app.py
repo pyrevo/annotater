@@ -60,6 +60,7 @@ from streamlit_app.core.engine_registry import (
 )
 from streamlit_app.core.vcf_contigs import (
     ChromosomeContigCollisionError,
+    header_contig_renames,
     reconcile_contig_lines,
 )
 from streamlit_app.utils import (
@@ -943,6 +944,18 @@ def run_annotation(cfg: dict, coord_df, annot_info, signature):
         coord_df, annot_df = normalized.coord_df, normalized.annot_df
         # Renames come from the normalization report, never re-derived.
         contig_renames = dict(normalized.coord_renames)
+        # Header ##contig declarations are normalized through the same
+        # registry and target, also for contigs no row uses. Row-derived
+        # renames are the same registry's answer, so they agree.
+        coord_parse = st.session_state.get("coord_parse")
+        header_lines = (coord_parse.get("vcf_header_lines")
+                        if isinstance(coord_parse, dict) else None)
+        if header_lines:
+            contig_renames = {
+                **header_contig_renames(
+                    header_lines, registry, cfg["chr_naming"]),
+                **contig_renames,
+            }
         chr_summary = {
             # The genome assembly's label for a bundled registry; None for
             # a custom mapping, which has no assembly identity.

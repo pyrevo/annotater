@@ -187,10 +187,11 @@ def _contig_lines(vcf):
     return [line for line in vcf.splitlines() if line.startswith("##contig=")]
 
 
-def test_header_contigs_absent_from_the_records_keep_their_original_ids():
-    """Characterization of the current contract: only identifiers present in
-    the query rows are renamed, so a declared-but-unused contig keeps its
-    source name (it is neither renamed nor invented)."""
+def test_the_export_renames_exactly_the_ids_it_is_given():
+    """``convert_df_to_vcf`` applies the renames it receives and invents
+    none. The application passes the header IDs normalized through the
+    selected registry as well (tests/test_vcf_header_normalization.py), so a
+    declared-but-unused contig follows the chosen naming there."""
     header = ["##contig=<ID=1,length=10>", "##contig=<ID=2,length=20>"]
     vcf = _export(["chr1"], header, {"1": "chr1"})
     assert ids(_contig_lines(vcf)) == ["chr1", "2"]
