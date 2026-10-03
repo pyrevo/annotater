@@ -9,10 +9,7 @@ is never silently discarded.
 
 from __future__ import annotations
 
-import re
 from collections.abc import Mapping
-
-_CONTIG_ID_RE = re.compile(r'(?<=[<,])ID=("?)([^,>"]*)\1')
 
 
 class ChromosomeContigCollisionError(ValueError):
@@ -37,7 +34,10 @@ def parse_contig_attributes(line: str) -> list[tuple[str, str]]:
     """Attributes of a ``##contig=<...>`` line as ordered ``(key, value)``
     pairs, values kept exactly as written (quotes included). Commas inside
     double quotes do not split."""
-    body = line[line.index("<") + 1:line.rindex(">")]
+    # A declaration without its closing ">" is malformed but must not crash
+    # the export: its attributes are read up to the end of the line.
+    stop = line.rindex(">") if ">" in line else len(line)
+    body = line[line.index("<") + 1:stop]
     parts, current, quoted = [], [], False
     for ch in body:
         if ch == '"':
@@ -50,6 +50,39 @@ def parse_contig_attributes(line: str) -> list[tuple[str, str]]:
     parts.append("".join(current))
     return [tuple(part.split("=", 1)) if "=" in part else (part, "")
             for part in parts]
+
+
+def _find_id(line: str):
+    """``(start, end, quote, value)`` of the ``ID`` attribute of a contig
+    line, located by walking the attributes quote-aware: an ``ID=`` inside a
+    quoted value (for example a description) is not the contig ID."""
+    i = line.index("<") + 1
+    quoted = False
+    attribute_start = True
+    n = len(line)
+    while i < n:
+        ch = line[i]
+        if attribute_start and not quoted and line.startswith("ID=", i):
+            j = i + 3
+            if j < n and line[j] == '"':
+                close = line.find('"', j + 1)
+                if close == -1:
+                    return None
+                return i, close + 1, '"', line[j + 1:close]
+            end = j
+            while end < n and line[end] not in ",>":
+                end += 1
+            return i, end, "", line[j:end]
+        attribute_start = False
+        if ch == '"':
+            quoted = not quoted
+        elif not quoted:
+            if ch == ",":
+                attribute_start = True
+            elif ch == ">":
+                return None
+        i += 1
+    return None
 
 
 def _attributes_without_id(line: str) -> dict[str, tuple[str, ...]]:
@@ -76,14 +109,13 @@ def reconcile_contig_lines(lines, contig_renames: Mapping[str, str] | None):
     group: dict[str, list[tuple[str, str]]] = {}
     for line in lines:
         if line.startswith("##contig=<"):
-            m = _CONTIG_ID_RE.search(line)
-            if m:
-                source = m.group(2)
+            found = _find_id(line)
+            if found:
+                start, end, quote, source = found
                 new_id = contig_renames.get(source, source)
                 if new_id != source:
-                    line = (line[:m.start()]
-                            + f"ID={m.group(1)}{new_id}{m.group(1)}"
-                            + line[m.end():])
+                    line = (line[:start] + f"ID={quote}{new_id}{quote}"
+                            + line[end:])
                 group.setdefault(new_id, []).append((source, line))
                 if new_id in survivor:
                     continue

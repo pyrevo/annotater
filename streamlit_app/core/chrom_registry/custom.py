@@ -121,7 +121,22 @@ def _read(source, max_bytes: int) -> str:
         data = source.read(max_bytes + 1)
     else:
         raise TypeError("source must be bytes or a binary/text file object")
-    if len(data) > max_bytes:
+    if isinstance(data, str):
+        # A text file object yields characters, but the limit is in bytes
+        # (as for a binary source): measure the UTF-8 size when it could
+        # exceed the limit (at most 4 bytes per character).
+        if len(data) * 4 > max_bytes:
+            try:
+                size = len(data.encode("utf-8"))
+            except UnicodeEncodeError as exc:
+                raise CustomRegistryError([CustomRegistryIssue(
+                    ENCODING, f"the text is not valid UTF-8 ({exc.reason})"
+                )]) from None
+        else:
+            size = len(data)
+    else:
+        size = len(data)
+    if size > max_bytes:
         raise CustomRegistryError([CustomRegistryIssue(
             TOO_LARGE, f"the mapping file is larger than {max_bytes:,} bytes"
         )])
