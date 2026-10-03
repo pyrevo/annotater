@@ -89,7 +89,13 @@ class ChromosomeRegistry:
     user-supplied (custom) registry has no assembly identity: its
     ``assembly_id`` is ``None`` and ``name`` says what it is. ``name`` is
     only a display/source label; it is never a scientific claim.
+
+    Instances are immutable: bundled registries are cached and shared by
+    every caller (and every GUI session), so no attribute can be assigned
+    or deleted after construction.
     """
+
+    __slots__ = ("_index", "_records", "assembly_id", "name")
 
     def __init__(
         self,
@@ -102,19 +108,29 @@ class ChromosomeRegistry:
             raise RegistryDataError(
                 "a registry without an assembly id needs a display name"
             )
-        self.assembly_id = assembly_id
-        self.name = name or assembly_id
-        self._records = MappingProxyType(dict(records))
+        records = MappingProxyType(dict(records))
         index: dict[str, str] = {}
-        for seq_id, record in self._records.items():
+        for seq_id, record in records.items():
             for alias in record.aliases.values():
                 owner = index.setdefault(alias, seq_id)
                 if owner != seq_id:
                     raise RegistryDataError(
-                        f"{self.name}: alias {alias!r} belongs to both "
-                        f"{owner!r} and {seq_id!r}"
+                        f"{name or assembly_id}: alias {alias!r} belongs to "
+                        f"both {owner!r} and {seq_id!r}"
                     )
-        self._index = MappingProxyType(index)
+        for attribute, value in (("assembly_id", assembly_id),
+                                 ("name", name or assembly_id),
+                                 ("_records", records),
+                                 ("_index", MappingProxyType(index))):
+            object.__setattr__(self, attribute, value)
+
+    def __setattr__(self, attribute, value):
+        raise AttributeError(
+            f"ChromosomeRegistry is immutable (cannot set {attribute!r})")
+
+    def __delattr__(self, attribute):
+        raise AttributeError(
+            f"ChromosomeRegistry is immutable (cannot delete {attribute!r})")
 
     @classmethod
     def from_tsv(cls, assembly_id: str, text: str) -> ChromosomeRegistry:

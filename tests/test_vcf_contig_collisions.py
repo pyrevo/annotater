@@ -227,9 +227,11 @@ def test_app_shows_an_error_instead_of_dropping_conflicting_contigs():
     at = _run_app((_VCF_HEAD.format(contigs=contigs) + _ROWS).encode(), _GFF)
     assert not at.exception
     messages = [e.value for e in at.error]
-    assert any("contig metadata disagree (length)" in m
-               and "1, chr1" in m and "(chr1)" in m
+    assert any("contig metadata disagree" in m
                and "cannot safely choose" in m for m in messages)
+    # The contig IDs and attributes are shown literally, in plain text.
+    codes = [c.value for c in at.get("code")]
+    assert "1, chr1 \u2192 chr1\nconflicting attributes: length" in codes
     assert not [b for b in at.get("download_button")
                 if getattr(b, "key", None) == "download_vcf"]
 

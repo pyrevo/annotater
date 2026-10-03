@@ -13,6 +13,7 @@ from .custom import (
     DEFAULT_MAX_ROWS,
     CustomRegistryError,
     CustomRegistryIssue,
+    describe_issue,
     load_custom_registry,
 )
 from .loader import (
@@ -53,6 +54,7 @@ __all__ = [
     "UnsupportedAuthorityError",
     "assembly_options",
     "canonical_assembly_id",
+    "describe_issue",
     "find_assembly",
     "load_catalog",
     "load_custom_registry",

@@ -201,8 +201,9 @@ def test_unrecognized_names_are_reported_not_presented_as_normalized():
                if e.label == "Chromosome normalization details"]
     assert details
     text = " ".join(m.value for m in details[0].markdown)
-    assert "Not recognized in Human — Dec. 2013 (GRCh38/hg38): mystery (1 rows)" in text
+    assert "Not recognized in Human — Dec. 2013 (GRCh38/hg38):" in text
     assert "no verified name is available" not in text
+    assert [c.value for c in details[0].get("code")] == ["mystery (1 rows)"]
 
 
 def test_hg19_mitochondrial_names_are_not_rewritten_by_string_rules():
@@ -218,8 +219,9 @@ def test_hg19_mitochondrial_names_are_not_rewritten_by_string_rules():
     details = next(e for e in at.get("expander")
                    if e.label == "Chromosome normalization details")
     text = " ".join(m.value for m in details.markdown)
-    assert "Recognized, but no verified name is available in Ensembl names: " \
-        "chrM (1 rows)" in text
+    assert "Recognized, but no verified name is available in Ensembl names:" \
+        in text
+    assert [c.value for c in details.get("code")] == ["chrM (1 rows)"]
     assert "Not recognized" not in text
 
 
@@ -243,8 +245,7 @@ def test_merged_names_are_reported_without_an_error():
                for i in _texts(at, "info"))
     details = next(e for e in at.get("expander")
                    if e.label == "Chromosome normalization details")
-    text = " ".join(m.value for m in details.markdown)
-    assert "1, chr1 → chr1" in text
+    assert [c.value for c in details.get("code")] == ["1, chr1 → chr1"]
     assert at.session_state["result_vcf_contig_renames"] == {"1": "chr1"}
 
 

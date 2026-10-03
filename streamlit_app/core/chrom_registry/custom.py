@@ -24,6 +24,7 @@ bundled registries. Nothing is persisted and nothing uses the network.
 
 from __future__ import annotations
 
+import re
 from collections import defaultdict
 from dataclasses import dataclass
 from types import MappingProxyType
@@ -54,6 +55,20 @@ SEQ_ID_PREFIX = "custom:"
 DEFAULT_MAX_BYTES = 64 * 1024 * 1024
 DEFAULT_MAX_ROWS = 500_000
 MAX_REPORTED_ISSUES = 20
+
+# Presentation bounds for validation messages (the registry itself never
+# truncates anything). One offending value is shown up to MAX_VALUE_PREVIEW
+# characters and one issue lists at most MAX_LISTED_PLACES lines/places, so
+# a multi-megabyte value or an alias repeated on every row still yields a
+# message of a few kilobytes.
+MAX_VALUE_PREVIEW = 80
+MAX_LISTED_PLACES = 10
+
+# Unicode general category Cc (control): exactly U+0000-U+001F and
+# U+007F-U+009F (C0, DEL and C1 controls, e.g. U+0085). Format characters
+# (Cf, e.g. zero-width space) are not control characters and are kept, as
+# names are matched exactly and never normalized.
+_CONTROL = re.compile("[\x00-\x1f\x7f-\x9f]")
 
 _UTF8_BOM = "﻿"
 
@@ -92,8 +107,7 @@ class CustomRegistryError(RegistryError):
     def __init__(self, issues: list[CustomRegistryIssue], more: int = 0):
         self.issues = tuple(issues)
         self.more = more
-        lines = [f"line {','.join(map(str, i.rows))}: {i.message}"
-                 if i.rows else i.message for i in self.issues]
+        lines = [describe_issue(i) for i in self.issues]
         if more:
             lines.append(f"... and {more} more problem(s)")
         super().__init__("invalid custom chromosome mapping: "
@@ -102,6 +116,33 @@ class CustomRegistryError(RegistryError):
     @property
     def codes(self) -> tuple[str, ...]:
         return tuple(i.code for i in self.issues)
+
+
+def preview(value: str) -> str:
+    """``repr`` of a user value for a message, cut to ``MAX_VALUE_PREVIEW``
+    characters (with the full length stated) so input is never echoed in
+    bulk."""
+    if len(value) <= MAX_VALUE_PREVIEW:
+        return repr(value)
+    return (f"{value[:MAX_VALUE_PREVIEW]!r}... [truncated, "
+            f"{len(value):,} characters]")
+
+
+def listed(items) -> str:
+    """At most ``MAX_LISTED_PLACES`` items, then the total count."""
+    items = list(items)
+    text = ", ".join(map(str, items[:MAX_LISTED_PLACES]))
+    if len(items) > MAX_LISTED_PLACES:
+        text += f", ... ({len(items):,} in total)"
+    return text
+
+
+def describe_issue(issue: CustomRegistryIssue) -> str:
+    """One bounded, plain-text line: lines, columns, code and message."""
+    where = f"line {listed(issue.rows)}" if issue.rows else "file"
+    if issue.columns:
+        where += f" [{', '.join(dict.fromkeys(issue.columns))}]"
+    return f"{where}: {issue.code}: {issue.message}"
 
 
 def _read(source, max_bytes: int) -> str:
@@ -162,9 +203,9 @@ def _header_issue(fields: list[str]) -> CustomRegistryIssue | None:
     if missing:
         detail.append(f"missing {missing}")
     if extra:
-        detail.append(f"unexpected {extra}")
+        detail.append(f"unexpected [{listed(map(preview, extra))}]")
     if duplicated:
-        detail.append(f"duplicated {duplicated}")
+        detail.append(f"duplicated [{listed(map(preview, duplicated))}]")
     if not detail:
         detail.append("columns are in a different order")
     return CustomRegistryIssue(
@@ -172,8 +213,9 @@ def _header_issue(fields: list[str]) -> CustomRegistryIssue | None:
                 f"{expected!r} ({'; '.join(detail)})", rows=(1,))
 
 
-def _bad_characters(cell: str) -> bool:
-    return any(ord(ch) < 0x20 or ord(ch) == 0x7F for ch in cell)
+def _control_character(cell: str) -> str | None:
+    found = _CONTROL.search(cell)
+    return found.group() if found else None
 
 
 def parse_custom_tsv(text: str, *, max_rows: int = DEFAULT_MAX_ROWS):
@@ -227,16 +269,19 @@ def parse_custom_tsv(text: str, *, max_rows: int = DEFAULT_MAX_ROWS):
             continue
         clean = True
         for column, cell in zip(CUSTOM_HEADER, cells):
-            if cell and _bad_characters(cell):
+            control = _control_character(cell) if cell else None
+            if control is not None:
                 add(CustomRegistryIssue(
-                    CONTROL_CHARACTER, f"{column}: control character in "
-                                       f"{cell!r}", rows=(number,),
+                    CONTROL_CHARACTER, f"{column}: control character "
+                                       f"U+{ord(control):04X} in "
+                                       f"{preview(cell)}", rows=(number,),
                     columns=(column,)))
                 clean = False
             elif cell != cell.strip():
                 add(CustomRegistryIssue(
                     WHITESPACE, f"{column}: leading or trailing whitespace "
-                                f"in {cell!r} (names are never trimmed)",
+                                f"in {preview(cell)} (names are never "
+                                "trimmed)",
                     rows=(number,), columns=(column,)))
                 clean = False
         if not clean:
@@ -268,10 +313,11 @@ def parse_custom_tsv(text: str, *, max_rows: int = DEFAULT_MAX_ROWS):
     for alias, places in owners.items():
         lines_of = tuple(sorted({n for n, _ in places}))
         if len(lines_of) > 1:
-            where = ", ".join(f"line {n} {c}" for n, c in places)
+            where = listed(f"line {n} {c}" for n, c in places)
             add(CustomRegistryIssue(
                 ALIAS_COLLISION,
-                f"alias {alias!r} names more than one sequence ({where})",
+                f"alias {preview(alias)} names more than one sequence "
+                f"({where})",
                 rows=lines_of, columns=tuple(c for _, c in places),
                 alias=alias))
     if issues:

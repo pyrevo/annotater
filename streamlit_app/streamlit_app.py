@@ -45,6 +45,7 @@ from streamlit_app.core.chrom_registry import (
     DEFAULT_MAX_ROWS,
     CustomRegistryError,
     assembly_options,
+    describe_issue,
     load_catalog,
     resolve_registry_source,
 )
@@ -284,12 +285,8 @@ def _show_mapping_error(error: CustomRegistryError):
     """Plain-text validation report; file content is never rendered as
     markdown or HTML."""
     st.error(_MAPPING_INVALID_MESSAGE)
-    lines = []
-    for issue in error.issues:
-        where = f"line {', '.join(map(str, issue.rows))}" if issue.rows else "file"
-        if issue.columns:
-            where += f" [{', '.join(dict.fromkeys(issue.columns))}]"
-        lines.append(f"{where}: {issue.code}: {issue.message}")
+    # describe_issue bounds each line (value previews, listed places).
+    lines = [describe_issue(issue) for issue in error.issues]
     if error.more:
         lines.append(f"... and {error.more} more problem(s)")
     st.code("\n".join(lines), language=None, wrap_lines=True)
@@ -1162,10 +1159,19 @@ def _table_summary(label: str, report) -> str:
     )
 
 
-def _name_list(counts) -> str:
-    items = [f"{name} ({n:,} rows)" for name, n in list(counts.items())[:_DETAIL_LIMIT]]
-    extra = len(counts) - _DETAIL_LIMIT
-    return ", ".join(items) + (f", and {extra} more" if extra > 0 else "")
+def _show_identifiers(lines) -> None:
+    """Chromosome identifiers exactly as written. They come from the user's
+    files, so they go in a plain-text block, never through Markdown or HTML
+    (``HLA-A*01:01:01:01`` must not turn into emphasis)."""
+    lines = list(lines)
+    shown = lines[:_DETAIL_LIMIT]
+    if len(lines) > _DETAIL_LIMIT:
+        shown.append(f"... and {len(lines) - _DETAIL_LIMIT:,} more")
+    st.code("\n".join(shown), language=None, wrap_lines=True)
+
+
+def _count_lines(counts):
+    return [f"{name} ({n:,} rows)" for name, n in counts.items()]
 
 
 def _render_chromosome_report(summary):
@@ -1209,20 +1215,22 @@ def _render_chromosome_report(summary):
             st.markdown(f"**{label}**")
             if report.unknown:
                 st.markdown(
-                    f"Not recognized in {summary['source_label']}: "
-                    + _name_list(report.unknown)
-                )
+                    f"Not recognized in {summary['source_label']}:")
+                _show_identifiers(_count_lines(report.unknown))
             if report.no_alias_for_target:
                 st.markdown(
                     "Recognized, but no verified name is available in "
-                    f"{summary['naming_label']}: "
-                    + _name_list(report.no_alias_for_target)
+                    f"{summary['naming_label']}:"
                 )
-            for output, sources in list(report.collapses.items())[:_DETAIL_LIMIT]:
+                _show_identifiers(_count_lines(report.no_alias_for_target))
+            if report.collapses:
                 st.markdown(
                     "Multiple input chromosome names were normalized to the "
-                    f"same output name: {', '.join(sources)} \u2192 {output}"
+                    "same output name:"
                 )
+                _show_identifiers(
+                    f"{', '.join(sources)} \u2192 {output}"
+                    for output, sources in report.collapses.items())
 
 
 
@@ -1309,14 +1317,17 @@ def _render_downloads(
                 contig_renames=vcf_contig_renames,
             )
         except ChromosomeContigCollisionError as exc:
-            fields = ", ".join(sorted(exc.conflicts))
             st.error(
-                "Annotated VCF export is unavailable. The input chromosome "
-                f"names {', '.join(exc.sources)} were normalized to the same "
-                f"name ({exc.target}), but their VCF contig metadata "
-                f"disagree ({fields}). AnnotateR cannot safely choose "
-                "which metadata to keep."
+                "Annotated VCF export is unavailable. Several input "
+                "chromosome names were normalized to the same name, but "
+                "their VCF contig metadata disagree. AnnotateR cannot safely "
+                "choose which metadata to keep."
             )
+            # Contig IDs and attribute names come from the file: plain text.
+            _show_identifiers([
+                f"{', '.join(exc.sources)} → {exc.target}",
+                f"conflicting attributes: {', '.join(sorted(exc.conflicts))}",
+            ])
             return
         st.download_button(
             "Annotated VCF",

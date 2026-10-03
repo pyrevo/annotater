@@ -251,7 +251,8 @@ def test_gui_collapse_of_header_only_sources_merges_or_fails_explicitly():
     bad = custom_app(MAP, ["##contig=<ID=ctgX,length=9>",
                            "##contig=<ID=GBX.1,length=10>"], ["ctg1"])
     assert not bad.at.exception
-    assert any("disagree" in e.value and "chrX" in e.value for e in bad.at.error)
+    assert any("disagree" in e.value for e in bad.at.error)
+    assert any("\u2192 chrX" in c for c in bad.codes)
     assert not _has(bad.at, "download_button", "download_vcf")
 
 
