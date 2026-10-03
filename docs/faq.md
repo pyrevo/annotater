@@ -30,10 +30,30 @@ analyses and combine the exports downstream.
 ### Does AnnotateR modify my files?
 
 No. Your uploads are only parsed. All normalization (coordinate
-conversion, chromosome standardization) happens on in-memory copies.
+conversion, chromosome naming) happens on in-memory copies.
 Coordinate conversion is visible in the preview panels; the feature
-filter and chromosome standardization are applied when you press
+filter and chromosome normalization are applied when you press
 **Run annotation**, after the preview.
+
+### Does AnnotateR change my coordinates or my genome assembly when it renames chromosomes?
+
+No. Chromosome normalization changes only the chromosome identifier.
+Start, end, strand and every other column stay as they were, and it is
+not liftover ([Chromosome identifiers and genome assemblies](preparing-your-data/chromosome-identifiers.md)).
+
+### Why do I have to choose a genome assembly?
+
+The same chromosome name can denote different sequences in different
+assemblies, so AnnotateR resolves each identifier inside the assembly you
+select instead of guessing from its shape. If you keep the original
+names, no assembly is needed.
+
+### My organism or assembly is not in the list. What can I do?
+
+Choose **Custom chromosome mapping…** and upload a `.tsv` table with your
+own names. AnnotateR checks its structure but does not verify that the
+names are biologically correct
+([custom mappings](preparing-your-data/chromosome-identifiers.md#custom-chromosome-mapping)).
 
 ## Semantics
 

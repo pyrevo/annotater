@@ -11,12 +11,15 @@ were found for the selected operation and options.") and no row has
 Check in this order:
 
 1. **Chromosome naming mismatch** — query says `1`, annotation says
-   `chr1` (or accession names). Re-run with **Chromosome ID handling =
-   Auto-convert if needed**, or set a manual **Target style**. Only
-   UCSC ⇄ Ensembl names are converted (not NCBI accessions), and the
-   app warns when the two tables share no chromosome identifier. The
-   previews show names *before* conversion, so compare them to see the
-   mismatch ([Chromosome identifiers](preparing-your-data/chromosome-identifiers.md)).
+   `chr1` (or accession names). Select the **Genome assembly** both files
+   were made with and a **Chromosome naming** (not *Keep original
+   names*), then re-run. Identifiers that are not recognized in the
+   selected assembly, or that have no verified name in the chosen naming,
+   are kept and listed on the results page; the app warns when the two
+   tables share no chromosome identifier. The previews show names
+   *before* normalization, so compare them to see the mismatch
+   ([Chromosome identifiers and genome assemblies](preparing-your-data/chromosome-identifiers.md),
+   including its list of common messages).
 2. **Strand matching on, but the data has no (or one-sided) strand** —
    especially a **VCF query**: VCF has no strand, so with strand
    matching on, *every* query row is unmatchable. Also: your GFF's
@@ -105,4 +108,4 @@ sidebar configuration (screenshot or values), the engine selected, and
 the error message or a snippet of the unexpected rows. Zero-match
 diagnosis is fastest when the two preview panels are included — they
 show the parsed, coordinate-normalized tables, before the feature
-filter and chromosome standardization that are applied at run time.
+filter and chromosome normalization that are applied at run time.

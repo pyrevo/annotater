@@ -21,8 +21,11 @@ _spec = importlib.util.spec_from_file_location(
 gen = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(gen)
 
-EXAMPLES = gen.load_examples()
-BLOCKS = {n: gen.render_block(e) for n, e in EXAMPLES.items()}
+ALL_EXAMPLES = gen.load_examples()
+# Interval examples share one diagram layout; chromosome-naming examples have
+# their own rendering contract (tests/test_chromosome_semantic_examples.py).
+EXAMPLES = {n: e for n, e in ALL_EXAMPLES.items() if e["kind"] in gen.KINDS}
+BLOCKS = {n: gen.render_block(e) for n, e in ALL_EXAMPLES.items()}
 
 
 def body(name):
@@ -132,6 +135,12 @@ def test_unknown_fact_name_is_still_rejected():
         gen.validate_examples(data)
 
 
+def test_every_interval_kind_rule_still_applies_to_the_interval_subset():
+    assert EXAMPLES and set(ALL_EXAMPLES) - set(EXAMPLES)
+    assert {e["kind"] for e in ALL_EXAMPLES.values()
+            if e["name"] not in EXAMPLES} == {gen.CHROMOSOME_KIND}
+
+
 def test_unknown_or_missing_kind_is_rejected():
     for value in ("nope", None):
         data = json.loads(gen.FIXTURE.read_text())
@@ -220,7 +229,7 @@ def test_one_base_overlap_and_tie_grammar_in_blocks():
 
 # ---- width ------------------------------------------------------------------
 
-@pytest.mark.parametrize("name", sorted(EXAMPLES))
+@pytest.mark.parametrize("name", sorted(ALL_EXAMPLES))
 def test_no_generated_line_exceeds_max_width(name):
     assert max(len(l) for l in BLOCKS[name].split("\n")) <= gen.MAX_WIDTH
 
@@ -367,6 +376,9 @@ def test_docs_blocks_match_renderer_width_and_single_legend():
     assert blocks
     for path, name, lines in blocks:
         assert max(len(l) for l in lines) <= gen.MAX_WIDTH, (path, name)
+        if name not in EXAMPLES:  # chromosome-naming block: no interval legend
+            assert gen.LEGEND not in lines, (path, name)
+            continue
         assert lines.count(gen.LEGEND) == 1, (path, name)
         assert lines[0] == "```text" and lines[-1] == "```", (path, name)
 
@@ -380,7 +392,7 @@ def test_each_marker_pair_appears_once_per_page():
 
 def test_no_orphan_fixtures_and_no_unknown_markers():
     used = {name for _, name, _ in _doc_blocks()}
-    assert used == set(EXAMPLES)
+    assert used == set(ALL_EXAMPLES)
 
 
 def test_docs_blocks_are_current():

@@ -48,14 +48,3 @@ names found in the results."
 - If your annotation's meaningful identifier lives under a different
   key, it is still in the result table — use the export instead of the
   gene list for downstream use.
-
-## Screenshot
-
-The charts and gene list expander expanded for the Example 1 run:
-
-![The download buttons and the expanded Charts and gene list expander:
-feature type pie chart, annotations-per-chromosome bar chart, top-10 gene
-chart and the gene list downloads](../assets/screenshots/downloads.png)
-
-*S4 — the "Download results" buttons and the "Charts and gene list"
-expander expanded.*

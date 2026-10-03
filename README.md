@@ -42,10 +42,17 @@ from source for development.
 - Four relation modes: overlap, contains, within, closest; optional
   modifiers: minimum query-overlap fraction (overlap mode only),
   same-strand matching, and left/inner join behavior.
-- Chromosome identifier normalization: UCSC (`chr1–chr22, chrX, chrY,
-  chrM`) and Ensembl (`1–22, X, Y, MT`) names are converted when the two
-  files use different styles; NCBI accession styles and all other labels
-  are left unchanged.
+- Assembly-aware chromosome naming: choose a genome assembly and a naming
+  system (UCSC, Assembly, Ensembl, NCBI RefSeq or GenBank), and each
+  chromosome identifier is looked up in that assembly's registry and
+  renamed only to a verified name of the same sequence. 64 genome
+  assemblies of 46 species are bundled offline with pinned, checked
+  registries; identifiers that are unknown to the assembly, or that have
+  no verified name in the chosen naming, are kept and reported, never
+  guessed. For other assemblies, upload a custom chromosome mapping
+  (structurally checked, not biologically verified). Only chromosome
+  names change, never coordinates, and VCF `##contig` headers follow the
+  same renaming.
 - A single canonical coordinate model: 1-based formats (GFF3, GTF, VCF)
   are converted at parse time; every operation and export uses
   0-based half-open intervals.

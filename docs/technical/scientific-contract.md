@@ -41,6 +41,11 @@ that parity is enforced by the test suite, not by hope
   §8 (operations) (paraphrased with diagrams in the
   [Annotation Operations](../operations/choosing-an-operation.md)
   section).
+- **Chromosome identity and naming** → SPEC §5.1 and §5.1.1 (assembly
+  identity, aliases, custom mappings, VCF `##contig` declarations),
+  explained in [Chromosome registries: provenance and audit](chromosome-registry.md)
+  and, for users,
+  [Chromosome identifiers and genome assemblies](../preparing-your-data/chromosome-identifiers.md).
 - **Canonical schema, metadata preservation, missing values** →
   SPEC §6 (result schema) and §7 (join semantics) (paraphrased in
   [Result columns and provenance](../results/result-columns.md)).

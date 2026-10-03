@@ -1,0 +1,2140 @@
+{
+  "schema_version": 1,
+  "bundle_policy": {
+    "audit_snapshot": "audits/chrom_alias_catalog/report.json",
+    "include_status": [
+      "PASS"
+    ],
+    "max_sequence_records": 10000,
+    "reviewed_exceptions": [
+      "hg19"
+    ],
+    "rationale": "Bundled = clean PASS assemblies with at most max_sequence_records sequences, plus assemblies already in production through a reviewed intervention (hg19: one reviewed source-label correction). REVIEW, FAIL and NO_SOURCE assemblies are never imported automatically.",
+    "facts_file": "audits/chrom_alias_catalog/bundle_facts.json",
+    "canonical_id_overrides": {
+      "bosTau9": "ARS-UCD1.2",
+      "canFam4": "UU_Cfam_GSD_1.0",
+      "ce11": "WBcel235",
+      "danRer10": "GRCz10",
+      "danRer11": "GRCz11",
+      "equCab3": "EquCab3.0",
+      "felCat9": "Felis_catus_9.0",
+      "galGal6": "GRCg6a",
+      "hg38": "GRCh38",
+      "mm10": "GRCm38",
+      "mm39": "GRCm39",
+      "oviAri4": "Oar_v4.0",
+      "rheMac10": "Mmul_10",
+      "rn7": "mRatBN7.2",
+      "susScr11": "Sscrofa11.1"
+    },
+    "canonical_id_rationale": "canonical_id is the UCSC database id, except for the reviewed names in canonical_id_overrides. An override must equal, verbatim, the '(<name>/<db>)' token of the UCSC description of that database, so no name is invented and no prose is parsed. Descriptions whose token carries an institution or a version prefix (for example 'Broad CanFam3.1/canFam3' or 'BDGP Release 6 + ISO1 MT/dm6') or only an institution ('Broad/equCab2') are not overridden. hg19 stays hg19: UCSC's hg19 is GRCh37 with a different mitochondrial sequence (chrM), so the name GRCh37 would claim the wrong sequence set."
+  },
+  "assemblies": [
+    {
+      "assembly_id": "GRCh38",
+      "ucsc_db": "hg38",
+      "source_url": "https://hgdownload.soe.ucsc.edu/goldenPath/hg38/database/chromAlias.txt.gz",
+      "source_format": "ucsc-chromAlias-table: alias<TAB>chrom<TAB>source",
+      "upstream_file": "upstream/hg38.chromAlias.txt.gz",
+      "sha256": "43aac315a93939c54d8b168ea8118fb7760b5e7ff8653f59dd712cfc7467be56",
+      "upstream_last_modified": "Tue, 24 Jan 2023 20:46:47 GMT",
+      "retrieved": "2026-10-02",
+      "registry_file": "data/GRCh38.tsv",
+      "label_corrections": [],
+      "catalog": {
+        "organism": "Human",
+        "common_name": "Human",
+        "scientific_name": "Homo sapiens",
+        "tax_id": 9606,
+        "description": "Dec. 2013 (GRCh38/hg38)",
+        "source_name": "GRCh38 Genome Reference Consortium Human Reference 38 (GCA_000001405.15)"
+      },
+      "audit": {
+        "audit_date": "2026-10-02",
+        "audit_catalog_sha256": "f8da527c7a925f623569440cf7aedb39339ea874feed8d0db9666fba3889743f",
+        "status": "PASS",
+        "reason_codes": [
+          "PASS"
+        ],
+        "sequence_records": 711,
+        "alias_rows": 2129
+      },
+      "canonical_id": "GRCh38",
+      "canonical_id_basis": "ucsc-description-token"
+    },
+    {
+      "assembly_id": "hg19",
+      "ucsc_db": "hg19",
+      "source_url": "https://hgdownload.soe.ucsc.edu/goldenPath/hg19/database/chromAlias.txt.gz",
+      "source_format": "ucsc-chromAlias-table: alias<TAB>chrom<TAB>source",
+      "upstream_file": "upstream/hg19.chromAlias.txt.gz",
+      "sha256": "61c4b593b9f0080518d898e4f4171905bffcbd6aed6d48c4e266234dd11436da",
+      "upstream_last_modified": "Sun, 22 Mar 2020 10:27:54 GMT",
+      "retrieved": "2026-10-02",
+      "registry_file": "data/hg19.tsv",
+      "label_corrections": [
+        {
+          "alias": "NC_001807.4",
+          "chrom": "chrM",
+          "from": "genbank",
+          "to": "refseq",
+          "rationale": "UCSC labels this alias 'genbank' but NC_ is the NCBI RefSeq accession prefix and NCBI nuccore reports NC_001807.4 as a RefSeq record (Homo sapiens mitochondrion, complete genome, 16571 bp, equal to hg19.chrom.sizes chrM). Only the authority label is corrected; the alias string and its association with chrM are unchanged. Reviewed 2026-10-02."
+        }
+      ],
+      "ensembl_evidence": {
+        "source_url": "https://ftp.ensembl.org/pub/grch37/release-116/mysql/homo_sapiens_core_116_37/",
+        "ensembl_release": 116,
+        "ensembl_db": "homo_sapiens_core_116_37",
+        "ensembl_assembly": "GRCh37.p13",
+        "assembly_accession": "GCA_000001405.14",
+        "coord_system_version": "GRCh37",
+        "retrieved": "2026-10-02",
+        "tables": {
+          "attrib_type.txt.gz": "627275f5dade2d52c63a5705dc2052c3ba8ba247b56230efb21c790a0c72a177",
+          "coord_system.txt.gz": "5e7fa395fa3c922a403b23be2aebef9778fcb11c798c723fc1fbb60933ceeea4",
+          "external_db.txt.gz": "79635b8f904f47af3aeb94d655694d89519a54cec34757fb9f257ef82e1e7283",
+          "seq_region.txt.gz": "0ed7b6ad9080a36ac4ca9119801d1f919328e1139dfe05caab2eedf023e89b3f",
+          "seq_region_attrib.txt.gz": "0e5b3ea1b46395e72614217fcfa5a675f04b74f5c8925a24956e1ac062b89fc7",
+          "seq_region_synonym.txt.gz": "edd0c720dc3a1e862f7aa3030dd72cca348c638a340361a16ca964b9f3ced6f5"
+        },
+        "evidence_file": "upstream/hg19.ensembl-evidence.tsv",
+        "evidence_sha256": "1d53b453580abe3af2d86c82dd86ffb3a23f942163d46836775f91350223a48d",
+        "match_rule": "A top-level Ensembl region adds its name as the ensembl alias of the one hg19 record whose GenBank or RefSeq accession equals the region's INSDC or RefSeq_genomic synonym exactly (versioned). No name matching; assembly aliases are never copied; an accession contradiction, zero/multiple matches, or an explicit upstream ensembl alias is a build error.",
+        "ucsc_name_disagreements": [
+          {
+            "ensembl_name": "MT",
+            "evidence_ucsc": "chrM",
+            "registry_ucsc": "chrMT",
+            "rationale": "Ensembl GRCh37 MT (16569 bp) is identified by RefSeq NC_012920.1, which in the hg19 table belongs to chrMT; Ensembl's own UCSC synonym 'chrM' names a different sequence in UCSC hg19 (chrM = NC_001807.4, 16571 bp). The accession decides identity; the UCSC-name synonym is not used."
+          }
+        ]
+      },
+      "catalog": {
+        "organism": "Human",
+        "common_name": "Human",
+        "scientific_name": "Homo sapiens",
+        "tax_id": 9606,
+        "description": "Feb. 2009 (GRCh37/hg19)",
+        "source_name": "GRCh37 Genome Reference Consortium Human Reference 37 (GCA_000001405.1)"
+      },
+      "audit": {
+        "audit_date": "2026-10-02",
+        "audit_catalog_sha256": "f8da527c7a925f623569440cf7aedb39339ea874feed8d0db9666fba3889743f",
+        "status": "REVIEW",
+        "reason_codes": [
+          "SOURCE_LABEL_MISMATCH"
+        ],
+        "sequence_records": 298,
+        "alias_rows": 892
+      },
+      "canonical_id": "hg19",
+      "canonical_id_basis": "ucsc-db"
+    },
+    {
+      "assembly_id": "GRCm39",
+      "ucsc_db": "mm39",
+      "source_url": "https://hgdownload.soe.ucsc.edu/goldenPath/mm39/database/chromAlias.txt.gz",
+      "source_format": "ucsc-chromAlias-table: alias<TAB>chrom<TAB>source",
+      "upstream_file": "upstream/mm39.chromAlias.txt.gz",
+      "sha256": "f1815357649b646ffa2153f9f31a12d7683fd4595999dc42e924741532e6da78",
+      "upstream_last_modified": "Fri, 12 Mar 2021 20:45:37 GMT",
+      "retrieved": "2026-10-02",
+      "registry_file": "data/GRCm39.tsv",
+      "label_corrections": [],
+      "catalog": {
+        "organism": "Mouse",
+        "common_name": "Mouse",
+        "scientific_name": "Mus musculus",
+        "tax_id": 10090,
+        "description": "Jun. 2020 (GRCm39/mm39)",
+        "source_name": "Genome Reference Consortium Mouse Build 39 (GCA_000001635.9)"
+      },
+      "audit": {
+        "audit_date": "2026-10-02",
+        "audit_catalog_sha256": "f8da527c7a925f623569440cf7aedb39339ea874feed8d0db9666fba3889743f",
+        "status": "PASS",
+        "reason_codes": [
+          "PASS"
+        ],
+        "sequence_records": 61,
+        "alias_rows": 183
+      },
+      "canonical_id": "GRCm39",
+      "canonical_id_basis": "ucsc-description-token"
+    },
+    {
+      "assembly_id": "dm6",
+      "ucsc_db": "dm6",
+      "source_url": "https://hgdownload.soe.ucsc.edu/goldenPath/dm6/database/chromAlias.txt.gz",
+      "source_format": "ucsc-chromAlias-table: alias<TAB>chrom<TAB>source",
+      "upstream_file": "upstream/dm6.chromAlias.txt.gz",
+      "sha256": "c2909751c7b2df22bdb9eb5a56042e1c359cae6028dc04b433d25dc06737ba7e",
+      "upstream_last_modified": "Sun, 18 Feb 2018 14:17:02 GMT",
+      "retrieved": "2026-10-02",
+      "registry_file": "data/dm6.tsv",
+      "label_corrections": [],
+      "catalog": {
+        "organism": "D. melanogaster",
+        "common_name": "D. melanogaster",
+        "scientific_name": "Drosophila melanogaster",
+        "tax_id": 7227,
+        "description": "Aug. 2014 (BDGP Release 6 + ISO1 MT/dm6)",
+        "source_name": "The FlyBase Consortium/Berkeley Drosophila Genome Project/Celera Genomics (GCA_000001215.4)"
+      },
+      "audit": {
+        "audit_date": "2026-10-02",
+        "audit_catalog_sha256": "f8da527c7a925f623569440cf7aedb39339ea874feed8d0db9666fba3889743f",
+        "status": "PASS",
+        "reason_codes": [
+          "PASS"
+        ],
+        "sequence_records": 1870,
+        "alias_rows": 5609
+      },
+      "canonical_id": "dm6",
+      "canonical_id_basis": "ucsc-db"
+    },
+    {
+      "assembly_id": "GRCz11",
+      "ucsc_db": "danRer11",
+      "source_url": "https://hgdownload.soe.ucsc.edu/goldenPath/danRer11/database/chromAlias.txt.gz",
+      "source_format": "ucsc-chromAlias-table: alias<TAB>chrom<TAB>source",
+      "upstream_file": "upstream/danRer11.chromAlias.txt.gz",
+      "sha256": "1e4344784a998cd59647684e53cd6e0f0822db7b7ebd236c6a52de46e287ee49",
+      "upstream_last_modified": "Sun, 05 Aug 2018 13:11:44 GMT",
+      "retrieved": "2026-10-02",
+      "registry_file": "data/GRCz11.tsv",
+      "label_corrections": [],
+      "catalog": {
+        "organism": "Zebrafish",
+        "common_name": "Zebrafish",
+        "scientific_name": "Danio rerio",
+        "tax_id": 7955,
+        "description": "May 2017 (GRCz11/danRer11)",
+        "source_name": "Genome Reference Consortium Zebrafish Build 11 (GCA_000002035.4)"
+      },
+      "audit": {
+        "audit_date": "2026-10-02",
+        "audit_catalog_sha256": "f8da527c7a925f623569440cf7aedb39339ea874feed8d0db9666fba3889743f",
+        "status": "PASS",
+        "reason_codes": [
+          "PASS"
+        ],
+        "sequence_records": 1923,
+        "alias_rows": 3872
+      },
+      "canonical_id": "GRCz11",
+      "canonical_id_basis": "ucsc-description-token"
+    },
+    {
+      "assembly_id": "rn7",
+      "ucsc_db": "rn7",
+      "source_url": "https://hgdownload.soe.ucsc.edu/goldenPath/rn7/database/chromAlias.txt.gz",
+      "source_format": "ucsc-chromAlias-table: alias<TAB>chrom<TAB>source",
+      "upstream_file": "upstream/rn7.chromAlias.txt.gz",
+      "sha256": "1e4981387c51f6f133e392b931417fe8724c6769389a054b86df78bf3cae49f4",
+      "upstream_last_modified": "Thu, 04 Feb 2021 00:54:45 GMT",
+      "retrieved": "2026-10-02",
+      "registry_file": "data/rn7.tsv",
+      "label_corrections": [],
+      "ensembl_evidence": {
+        "source_url": "https://ftp.ensembl.org/pub/release-111/mysql/rattus_norvegicus_core_111_72/",
+        "ensembl_release": 111,
+        "ensembl_db": "rattus_norvegicus_core_111_72",
+        "ensembl_assembly": "mRatBN7.2",
+        "assembly_accession": "GCA_015227675.2",
+        "coord_system_version": "mRatBN7.2",
+        "retrieved": "2026-10-02",
+        "tables": {
+          "attrib_type.txt.gz": "2e0d9b42161eae0b04eaff9756715ee1d3119b0f55951614809c1ad626cb9549",
+          "coord_system.txt.gz": "5ace094e3f059ede8b7fd3b86c13d7bac384ff662fff88f99a5b64bbfb23504b",
+          "external_db.txt.gz": "63737a8fbf3f2cbc137925e255b9475a6f6ffe8800b42096be7623fcf020eefa",
+          "seq_region.txt.gz": "358574eafb8f9166cdd66864128ff82182b232649dcbb13e95731ce42f9641da",
+          "seq_region_attrib.txt.gz": "29be75cd0b4e4264ca2e090293d7fc8b22811cc00ba41d87c8e2937c48685369",
+          "seq_region_synonym.txt.gz": "554177033db29450aa1cbc2ae27274e31df1579c3876078a05bc8a6782aee28d"
+        },
+        "evidence_file": "upstream/rn7.ensembl-evidence.tsv",
+        "evidence_sha256": "ed87e3350d5034c98836aa0ae9b8c848f5a38f4208776f8423951225d8f01786",
+        "match_rule": "A top-level Ensembl region adds its name as the ensembl alias of the one rn7 record whose GenBank or RefSeq accession equals the region's INSDC or RefSeq_genomic synonym exactly (versioned). Release 111 carries mRatBN7.2; current Ensembl rat data (GRCr8) is a different assembly and is never used. No name matching; assembly aliases are never copied; synonyms without an external database are ignored.",
+        "ucsc_name_disagreements": []
+      },
+      "catalog": {
+        "organism": "Rat",
+        "common_name": "Rat",
+        "scientific_name": "Rattus norvegicus",
+        "tax_id": 10116,
+        "description": "Nov. 2020 (mRatBN7.2/rn7)",
+        "source_name": "Wellcome Sanger Institute"
+      },
+      "audit": {
+        "audit_date": "2026-10-02",
+        "audit_catalog_sha256": "f8da527c7a925f623569440cf7aedb39339ea874feed8d0db9666fba3889743f",
+        "status": "PASS",
+        "reason_codes": [
+          "PASS"
+        ],
+        "sequence_records": 176,
+        "alias_rows": 528
+      },
+      "canonical_id": "mRatBN7.2",
+      "canonical_id_basis": "ucsc-description-token"
+    },
+    {
+      "assembly_id": "anoCar2",
+      "ucsc_db": "anoCar2",
+      "source_url": "https://hgdownload.soe.ucsc.edu/goldenPath/anoCar2/database/chromAlias.txt.gz",
+      "source_format": "ucsc-chromAlias-table: alias<TAB>chrom<TAB>source",
+      "upstream_file": "upstream/anoCar2.chromAlias.txt.gz",
+      "sha256": "db9da12fe14f117d56f526c9eb4021e21a427fa25926d60d3c88f2517d485c0e",
+      "upstream_last_modified": "Wed, 26 May 2021 18:51:09 GMT",
+      "retrieved": "2026-10-02",
+      "registry_file": "data/anoCar2.tsv",
+      "label_corrections": [],
+      "catalog": {
+        "organism": "Lizard",
+        "common_name": "Lizard",
+        "scientific_name": "Anolis carolinensis",
+        "tax_id": 28377,
+        "description": "May 2010 (Broad AnoCar2.0/anoCar2)",
+        "source_name": "Broad Institute of MIT and Harvard AnoCar 2.0 (GCA_000090745.1)"
+      },
+      "audit": {
+        "audit_date": "2026-10-02",
+        "audit_catalog_sha256": "f8da527c7a925f623569440cf7aedb39339ea874feed8d0db9666fba3889743f",
+        "status": "PASS",
+        "reason_codes": [
+          "PASS"
+        ],
+        "sequence_records": 6457,
+        "alias_rows": 19378
+      },
+      "canonical_id": "anoCar2",
+      "canonical_id_basis": "ucsc-db"
+    },
+    {
+      "assembly_id": "aquChr2",
+      "ucsc_db": "aquChr2",
+      "source_url": "https://hgdownload.soe.ucsc.edu/goldenPath/aquChr2/database/chromAlias.txt.gz",
+      "source_format": "ucsc-chromAlias-table: alias<TAB>chrom<TAB>source",
+      "upstream_file": "upstream/aquChr2.chromAlias.txt.gz",
+      "sha256": "890ec835eaac501320765ac84d69e40531cb53e1e457648ecc2fb2dfc08590e0",
+      "upstream_last_modified": "Thu, 11 May 2017 21:44:12 GMT",
+      "retrieved": "2026-10-02",
+      "registry_file": "data/aquChr2.tsv",
+      "label_corrections": [],
+      "catalog": {
+        "organism": "Golden eagle",
+        "common_name": "Golden eagle",
+        "scientific_name": "Aquila chrysaetos canadensis",
+        "tax_id": 216574,
+        "description": "Oct. 2014 (aquChr-1.0.2/aquChr2)",
+        "source_name": "WashU"
+      },
+      "audit": {
+        "audit_date": "2026-10-02",
+        "audit_catalog_sha256": "f8da527c7a925f623569440cf7aedb39339ea874feed8d0db9666fba3889743f",
+        "status": "PASS",
+        "reason_codes": [
+          "PASS"
+        ],
+        "sequence_records": 1141,
+        "alias_rows": 2282
+      },
+      "canonical_id": "aquChr2",
+      "canonical_id_basis": "ucsc-db"
+    },
+    {
+      "assembly_id": "bosTau6",
+      "ucsc_db": "bosTau6",
+      "source_url": "https://hgdownload.soe.ucsc.edu/goldenPath/bosTau6/database/chromAlias.txt.gz",
+      "source_format": "ucsc-chromAlias-table: alias<TAB>chrom<TAB>source",
+      "upstream_file": "upstream/bosTau6.chromAlias.txt.gz",
+      "sha256": "6ec5a5a05893b661ade41fcae4f7f4dad8bed4f49755ef5d45fbe4f3ae167801",
+      "upstream_last_modified": "Sun, 05 Aug 2018 12:27:53 GMT",
+      "retrieved": "2026-10-02",
+      "registry_file": "data/bosTau6.tsv",
+      "label_corrections": [],
+      "catalog": {
+        "organism": "Cow",
+        "common_name": "Cow",
+        "scientific_name": "Bos taurus",
+        "tax_id": 9913,
+        "description": "Nov. 2009 (Bos_taurus_UMD_3.1/bosTau6)",
+        "source_name": "UMD_3.1 (NCBI project 10708, accession GCA_000003055.3)"
+      },
+      "audit": {
+        "audit_date": "2026-10-02",
+        "audit_catalog_sha256": "f8da527c7a925f623569440cf7aedb39339ea874feed8d0db9666fba3889743f",
+        "status": "PASS",
+        "reason_codes": [
+          "PASS"
+        ],
+        "sequence_records": 3317,
+        "alias_rows": 3317
+      },
+      "canonical_id": "bosTau6",
+      "canonical_id_basis": "ucsc-db"
+    },
+    {
+      "assembly_id": "bosTau9",
+      "ucsc_db": "bosTau9",
+      "source_url": "https://hgdownload.soe.ucsc.edu/goldenPath/bosTau9/database/chromAlias.txt.gz",
+      "source_format": "ucsc-chromAlias-table: alias<TAB>chrom<TAB>source",
+      "upstream_file": "upstream/bosTau9.chromAlias.txt.gz",
+      "sha256": "86ba6010632288a309ba932a0c204101b18457109372e34b856af9e502b92cfe",
+      "upstream_last_modified": "Sun, 12 Apr 2020 10:25:04 GMT",
+      "retrieved": "2026-10-02",
+      "registry_file": "data/bosTau9.tsv",
+      "label_corrections": [],
+      "catalog": {
+        "organism": "Cow",
+        "common_name": "Cow",
+        "scientific_name": "Bos taurus",
+        "tax_id": 9913,
+        "description": "Apr. 2018 (ARS-UCD1.2/bosTau9)",
+        "source_name": "USDA ARS"
+      },
+      "audit": {
+        "audit_date": "2026-10-02",
+        "audit_catalog_sha256": "f8da527c7a925f623569440cf7aedb39339ea874feed8d0db9666fba3889743f",
+        "status": "PASS",
+        "reason_codes": [
+          "PASS"
+        ],
+        "sequence_records": 2211,
+        "alias_rows": 4453
+      },
+      "canonical_id": "ARS-UCD1.2",
+      "canonical_id_basis": "ucsc-description-token"
+    },
+    {
+      "assembly_id": "calJac4",
+      "ucsc_db": "calJac4",
+      "source_url": "https://hgdownload.soe.ucsc.edu/goldenPath/calJac4/database/chromAlias.txt.gz",
+      "source_format": "ucsc-chromAlias-table: alias<TAB>chrom<TAB>source",
+      "upstream_file": "upstream/calJac4.chromAlias.txt.gz",
+      "sha256": "a26e2fab3bac4245517a1433ddfe1f0f3d9742dacc9c90bf98e80dc7d590d58a",
+      "upstream_last_modified": "Thu, 03 Sep 2020 18:38:36 GMT",
+      "retrieved": "2026-10-02",
+      "registry_file": "data/calJac4.tsv",
+      "label_corrections": [],
+      "catalog": {
+        "organism": "Marmoset",
+        "common_name": "Marmoset",
+        "scientific_name": "Callithrix jacchus",
+        "tax_id": 9483,
+        "description": "May 2020 (Callithrix_jacchus_cj1700_1.1/calJac4)",
+        "source_name": "McDonnell Genome Institute at Washington University"
+      },
+      "audit": {
+        "audit_date": "2026-10-02",
+        "audit_catalog_sha256": "f8da527c7a925f623569440cf7aedb39339ea874feed8d0db9666fba3889743f",
+        "status": "PASS",
+        "reason_codes": [
+          "PASS"
+        ],
+        "sequence_records": 964,
+        "alias_rows": 2868
+      },
+      "canonical_id": "calJac4",
+      "canonical_id_basis": "ucsc-db"
+    },
+    {
+      "assembly_id": "canFam3",
+      "ucsc_db": "canFam3",
+      "source_url": "https://hgdownload.soe.ucsc.edu/goldenPath/canFam3/database/chromAlias.txt.gz",
+      "source_format": "ucsc-chromAlias-table: alias<TAB>chrom<TAB>source",
+      "upstream_file": "upstream/canFam3.chromAlias.txt.gz",
+      "sha256": "a154f307aaabade31a1e75a53189fa3988dee42f4ba88f2677ee5a77889d53fa",
+      "upstream_last_modified": "Sun, 18 Feb 2018 13:41:05 GMT",
+      "retrieved": "2026-10-02",
+      "registry_file": "data/canFam3.tsv",
+      "label_corrections": [],
+      "catalog": {
+        "organism": "Dog",
+        "common_name": "Dog",
+        "scientific_name": "Canis lupus familiaris",
+        "tax_id": 9615,
+        "description": "Sep. 2011 (Broad CanFam3.1/canFam3)",
+        "source_name": "Broad CanFam3.1 (GCA_000002285.2)"
+      },
+      "audit": {
+        "audit_date": "2026-10-02",
+        "audit_catalog_sha256": "f8da527c7a925f623569440cf7aedb39339ea874feed8d0db9666fba3889743f",
+        "status": "PASS",
+        "reason_codes": [
+          "PASS"
+        ],
+        "sequence_records": 3268,
+        "alias_rows": 6575
+      },
+      "canonical_id": "canFam3",
+      "canonical_id_basis": "ucsc-db"
+    },
+    {
+      "assembly_id": "canFam4",
+      "ucsc_db": "canFam4",
+      "source_url": "https://hgdownload.soe.ucsc.edu/goldenPath/canFam4/database/chromAlias.txt.gz",
+      "source_format": "ucsc-chromAlias-table: alias<TAB>chrom<TAB>source",
+      "upstream_file": "upstream/canFam4.chromAlias.txt.gz",
+      "sha256": "2f47eddd544c95a5436aa0f82f3359da2d31a6a349fc17cd2f60ab60e9a52b1c",
+      "upstream_last_modified": "Wed, 20 May 2020 17:44:40 GMT",
+      "retrieved": "2026-10-02",
+      "registry_file": "data/canFam4.tsv",
+      "label_corrections": [],
+      "catalog": {
+        "organism": "Dog",
+        "common_name": "Dog",
+        "scientific_name": "Canis lupus familiaris",
+        "tax_id": 9615,
+        "description": "Mar. 2020 (UU_Cfam_GSD_1.0/canFam4)",
+        "source_name": "Uppsala University"
+      },
+      "audit": {
+        "audit_date": "2026-10-02",
+        "audit_catalog_sha256": "f8da527c7a925f623569440cf7aedb39339ea874feed8d0db9666fba3889743f",
+        "status": "PASS",
+        "reason_codes": [
+          "PASS"
+        ],
+        "sequence_records": 2198,
+        "alias_rows": 2198
+      },
+      "canonical_id": "UU_Cfam_GSD_1.0",
+      "canonical_id_basis": "ucsc-description-token"
+    },
+    {
+      "assembly_id": "canFam5",
+      "ucsc_db": "canFam5",
+      "source_url": "https://hgdownload.soe.ucsc.edu/goldenPath/canFam5/database/chromAlias.txt.gz",
+      "source_format": "ucsc-chromAlias-table: alias<TAB>chrom<TAB>source",
+      "upstream_file": "upstream/canFam5.chromAlias.txt.gz",
+      "sha256": "e5c63ec524f5e7cd466b990fe3dd6cbfa31dd495e729b34b50cc77befbd3776b",
+      "upstream_last_modified": "Wed, 29 Jul 2020 20:24:22 GMT",
+      "retrieved": "2026-10-02",
+      "registry_file": "data/canFam5.tsv",
+      "label_corrections": [],
+      "catalog": {
+        "organism": "Dog",
+        "common_name": "Dog",
+        "scientific_name": "Canis lupus familiaris",
+        "tax_id": 9615,
+        "description": "May 2019 (UMICH_Zoey_3.1/canFam5)",
+        "source_name": "University of Michigan"
+      },
+      "audit": {
+        "audit_date": "2026-10-02",
+        "audit_catalog_sha256": "f8da527c7a925f623569440cf7aedb39339ea874feed8d0db9666fba3889743f",
+        "status": "PASS",
+        "reason_codes": [
+          "PASS"
+        ],
+        "sequence_records": 794,
+        "alias_rows": 1548
+      },
+      "canonical_id": "canFam5",
+      "canonical_id_basis": "ucsc-db"
+    },
+    {
+      "assembly_id": "canFam6",
+      "ucsc_db": "canFam6",
+      "source_url": "https://hgdownload.soe.ucsc.edu/goldenPath/canFam6/database/chromAlias.txt.gz",
+      "source_format": "ucsc-chromAlias-table: alias<TAB>chrom<TAB>source",
+      "upstream_file": "upstream/canFam6.chromAlias.txt.gz",
+      "sha256": "bb869a4e95e6d18f8755601726fef3df50a79e199f1982d685ec3316728e562c",
+      "upstream_last_modified": "Thu, 13 May 2021 17:21:33 GMT",
+      "retrieved": "2026-10-02",
+      "registry_file": "data/canFam6.tsv",
+      "label_corrections": [],
+      "catalog": {
+        "organism": "Dog",
+        "common_name": "Dog",
+        "scientific_name": "Canis lupus familiaris",
+        "tax_id": 9615,
+        "description": "Oct. 2020 (Dog10K_Boxer_Tasha/canFam6)",
+        "source_name": "Dog Genome Sequencing Consortium"
+      },
+      "audit": {
+        "audit_date": "2026-10-02",
+        "audit_catalog_sha256": "f8da527c7a925f623569440cf7aedb39339ea874feed8d0db9666fba3889743f",
+        "status": "PASS",
+        "reason_codes": [
+          "PASS"
+        ],
+        "sequence_records": 147,
+        "alias_rows": 441
+      },
+      "canonical_id": "canFam6",
+      "canonical_id_basis": "ucsc-db"
+    },
+    {
+      "assembly_id": "cavPor3",
+      "ucsc_db": "cavPor3",
+      "source_url": "https://hgdownload.soe.ucsc.edu/goldenPath/cavPor3/database/chromAlias.txt.gz",
+      "source_format": "ucsc-chromAlias-table: alias<TAB>chrom<TAB>source",
+      "upstream_file": "upstream/cavPor3.chromAlias.txt.gz",
+      "sha256": "b72890a41f5bdd613b9b6bf6752a135a2b86371e429fcffe80377a0f3d725358",
+      "upstream_last_modified": "Sun, 18 Feb 2018 13:44:36 GMT",
+      "retrieved": "2026-10-02",
+      "registry_file": "data/cavPor3.tsv",
+      "label_corrections": [],
+      "catalog": {
+        "organism": "Guinea pig",
+        "common_name": "Guinea pig",
+        "scientific_name": "Cavia porcellus",
+        "tax_id": 10141,
+        "description": "Feb. 2008 (Broad/cavPor3)",
+        "source_name": "Broad Institute cavPor3"
+      },
+      "audit": {
+        "audit_date": "2026-10-02",
+        "audit_catalog_sha256": "f8da527c7a925f623569440cf7aedb39339ea874feed8d0db9666fba3889743f",
+        "status": "PASS",
+        "reason_codes": [
+          "PASS"
+        ],
+        "sequence_records": 3144,
+        "alias_rows": 6288
+      },
+      "canonical_id": "cavPor3",
+      "canonical_id_basis": "ucsc-db"
+    },
+    {
+      "assembly_id": "ce11",
+      "ucsc_db": "ce11",
+      "source_url": "https://hgdownload.soe.ucsc.edu/goldenPath/ce11/database/chromAlias.txt.gz",
+      "source_format": "ucsc-chromAlias-table: alias<TAB>chrom<TAB>source",
+      "upstream_file": "upstream/ce11.chromAlias.txt.gz",
+      "sha256": "e4def20f3a75c3e59659168f4fb3f0f99a6986ba5bcc28a6d642bba7099807be",
+      "upstream_last_modified": "Sun, 18 Feb 2018 13:46:28 GMT",
+      "retrieved": "2026-10-02",
+      "registry_file": "data/ce11.tsv",
+      "label_corrections": [],
+      "catalog": {
+        "organism": "C. elegans",
+        "common_name": "C. elegans",
+        "scientific_name": "Caenorhabditis elegans",
+        "tax_id": 6239,
+        "description": "Feb. 2013 (WBcel235/ce11)",
+        "source_name": "C. elegans Sequencing Consortium WBcel235 (GCA_000002985.3)"
+      },
+      "audit": {
+        "audit_date": "2026-10-02",
+        "audit_catalog_sha256": "f8da527c7a925f623569440cf7aedb39339ea874feed8d0db9666fba3889743f",
+        "status": "PASS",
+        "reason_codes": [
+          "PASS"
+        ],
+        "sequence_records": 7,
+        "alias_rows": 14
+      },
+      "canonical_id": "WBcel235",
+      "canonical_id_basis": "ucsc-description-token"
+    },
+    {
+      "assembly_id": "cerSim1",
+      "ucsc_db": "cerSim1",
+      "source_url": "https://hgdownload.soe.ucsc.edu/goldenPath/cerSim1/database/chromAlias.txt.gz",
+      "source_format": "ucsc-chromAlias-table: alias<TAB>chrom<TAB>source",
+      "upstream_file": "upstream/cerSim1.chromAlias.txt.gz",
+      "sha256": "105e3761416cd38b3bf8868bb9c55dfa062dbcacda7f1579a74793cad445a018",
+      "upstream_last_modified": "Sun, 18 Feb 2018 13:47:43 GMT",
+      "retrieved": "2026-10-02",
+      "registry_file": "data/cerSim1.tsv",
+      "label_corrections": [],
+      "catalog": {
+        "organism": "White rhinoceros",
+        "common_name": "White rhinoceros",
+        "scientific_name": "Ceratotherium simum",
+        "tax_id": 73337,
+        "description": "May 2012 (CerSimSim1.0/cerSim1)",
+        "source_name": "Broad Institute"
+      },
+      "audit": {
+        "audit_date": "2026-10-02",
+        "audit_catalog_sha256": "f8da527c7a925f623569440cf7aedb39339ea874feed8d0db9666fba3889743f",
+        "status": "PASS",
+        "reason_codes": [
+          "PASS"
+        ],
+        "sequence_records": 3087,
+        "alias_rows": 6173
+      },
+      "canonical_id": "cerSim1",
+      "canonical_id_basis": "ucsc-db"
+    },
+    {
+      "assembly_id": "chlSab2",
+      "ucsc_db": "chlSab2",
+      "source_url": "https://hgdownload.soe.ucsc.edu/goldenPath/chlSab2/database/chromAlias.txt.gz",
+      "source_format": "ucsc-chromAlias-table: alias<TAB>chrom<TAB>source",
+      "upstream_file": "upstream/chlSab2.chromAlias.txt.gz",
+      "sha256": "ec7cb891c96e67d670cd03d0f5bad062ddddf910cae2b3e48316495be40def68",
+      "upstream_last_modified": "Sun, 18 Feb 2018 13:48:18 GMT",
+      "retrieved": "2026-10-02",
+      "registry_file": "data/chlSab2.tsv",
+      "label_corrections": [],
+      "catalog": {
+        "organism": "Green monkey",
+        "common_name": "Green monkey",
+        "scientific_name": "Chlorocebus sabaeus",
+        "tax_id": 60711,
+        "description": "Mar. 2014 (Chlorocebus_sabeus 1.1/chlSab2)",
+        "source_name": "Vervet Genomics Consortium GCA_000409795.2"
+      },
+      "audit": {
+        "audit_date": "2026-10-02",
+        "audit_catalog_sha256": "f8da527c7a925f623569440cf7aedb39339ea874feed8d0db9666fba3889743f",
+        "status": "PASS",
+        "reason_codes": [
+          "PASS"
+        ],
+        "sequence_records": 2004,
+        "alias_rows": 4008
+      },
+      "canonical_id": "chlSab2",
+      "canonical_id_basis": "ucsc-db"
+    },
+    {
+      "assembly_id": "ci1",
+      "ucsc_db": "ci1",
+      "source_url": "https://hgdownload.soe.ucsc.edu/goldenPath/ci1/database/chromAlias.txt.gz",
+      "source_format": "ucsc-chromAlias-table: alias<TAB>chrom<TAB>source",
+      "upstream_file": "upstream/ci1.chromAlias.txt.gz",
+      "sha256": "03dfe0b63039955490860cf4da7f28da97577d29a2fea8063892559e25d32ed0",
+      "upstream_last_modified": "Fri, 16 Sep 2016 00:56:57 GMT",
+      "retrieved": "2026-10-02",
+      "registry_file": "data/ci1.tsv",
+      "label_corrections": [],
+      "catalog": {
+        "organism": "C. intestinalis",
+        "common_name": "C. intestinalis",
+        "scientific_name": "Ciona intestinalis",
+        "tax_id": 7719,
+        "description": "Dec. 2002 (JGI 1.0/ci1)",
+        "source_name": "JGI v1.0"
+      },
+      "audit": {
+        "audit_date": "2026-10-02",
+        "audit_catalog_sha256": "f8da527c7a925f623569440cf7aedb39339ea874feed8d0db9666fba3889743f",
+        "status": "PASS",
+        "reason_codes": [
+          "PASS"
+        ],
+        "sequence_records": 2501,
+        "alias_rows": 2501
+      },
+      "canonical_id": "ci1",
+      "canonical_id_basis": "ucsc-db"
+    },
+    {
+      "assembly_id": "ci3",
+      "ucsc_db": "ci3",
+      "source_url": "https://hgdownload.soe.ucsc.edu/goldenPath/ci3/database/chromAlias.txt.gz",
+      "source_format": "ucsc-chromAlias-table: alias<TAB>chrom<TAB>source",
+      "upstream_file": "upstream/ci3.chromAlias.txt.gz",
+      "sha256": "acc0ce2042330e533e19a26f0e6e30065e0bd71ec02b8ad3a9ea05e8b348e82e",
+      "upstream_last_modified": "Fri, 21 Jul 2017 17:13:23 GMT",
+      "retrieved": "2026-10-02",
+      "registry_file": "data/ci3.tsv",
+      "label_corrections": [],
+      "catalog": {
+        "organism": "C. intestinalis",
+        "common_name": "C. intestinalis",
+        "scientific_name": "Ciona intestinalis",
+        "tax_id": 7719,
+        "description": "Apr. 2011 (Kyoto KH/ci3)",
+        "source_name": "Kyoto KH"
+      },
+      "audit": {
+        "audit_date": "2026-10-02",
+        "audit_catalog_sha256": "f8da527c7a925f623569440cf7aedb39339ea874feed8d0db9666fba3889743f",
+        "status": "PASS",
+        "reason_codes": [
+          "PASS"
+        ],
+        "sequence_records": 1272,
+        "alias_rows": 2559
+      },
+      "canonical_id": "ci3",
+      "canonical_id_basis": "ucsc-db"
+    },
+    {
+      "assembly_id": "criGriChoV2",
+      "ucsc_db": "criGriChoV2",
+      "source_url": "https://hgdownload.soe.ucsc.edu/goldenPath/criGriChoV2/database/chromAlias.txt.gz",
+      "source_format": "ucsc-chromAlias-table: alias<TAB>chrom<TAB>source",
+      "upstream_file": "upstream/criGriChoV2.chromAlias.txt.gz",
+      "sha256": "0823217d8ad542c9e3c2aa6af135d8d711ac0e310ae129c3f4271e3897d0e649",
+      "upstream_last_modified": "Wed, 05 Jun 2019 17:41:54 GMT",
+      "retrieved": "2026-10-02",
+      "registry_file": "data/criGriChoV2.tsv",
+      "label_corrections": [],
+      "catalog": {
+        "organism": "Chinese hamster",
+        "common_name": "Chinese hamster",
+        "scientific_name": "Cricetulus griseus",
+        "tax_id": 10029,
+        "description": "Jun. 2017 (CHOK1S_HZDv1/criGriChoV2)",
+        "source_name": "Eagle Genomics Ltd"
+      },
+      "audit": {
+        "audit_date": "2026-10-02",
+        "audit_catalog_sha256": "f8da527c7a925f623569440cf7aedb39339ea874feed8d0db9666fba3889743f",
+        "status": "PASS",
+        "reason_codes": [
+          "PASS"
+        ],
+        "sequence_records": 8265,
+        "alias_rows": 16531
+      },
+      "canonical_id": "criGriChoV2",
+      "canonical_id_basis": "ucsc-db"
+    },
+    {
+      "assembly_id": "danRer10",
+      "ucsc_db": "danRer10",
+      "source_url": "https://hgdownload.soe.ucsc.edu/goldenPath/danRer10/database/chromAlias.txt.gz",
+      "source_format": "ucsc-chromAlias-table: alias<TAB>chrom<TAB>source",
+      "upstream_file": "upstream/danRer10.chromAlias.txt.gz",
+      "sha256": "a5873e87895f35466c0253a801d5c547eac0590c499e68625c6e065797233aa9",
+      "upstream_last_modified": "Sun, 03 Sep 2017 12:24:03 GMT",
+      "retrieved": "2026-10-02",
+      "registry_file": "data/danRer10.tsv",
+      "label_corrections": [],
+      "catalog": {
+        "organism": "Zebrafish",
+        "common_name": "Zebrafish",
+        "scientific_name": "Danio rerio",
+        "tax_id": 7955,
+        "description": "Sep. 2014 (GRCz10/danRer10)",
+        "source_name": "Genome Reference Consortium Zebrafish Build 10 (GCA_000002035.3)"
+      },
+      "audit": {
+        "audit_date": "2026-10-02",
+        "audit_catalog_sha256": "f8da527c7a925f623569440cf7aedb39339ea874feed8d0db9666fba3889743f",
+        "status": "PASS",
+        "reason_codes": [
+          "PASS"
+        ],
+        "sequence_records": 1061,
+        "alias_rows": 2147
+      },
+      "canonical_id": "GRCz10",
+      "canonical_id_basis": "ucsc-description-token"
+    },
+    {
+      "assembly_id": "danRer7",
+      "ucsc_db": "danRer7",
+      "source_url": "https://hgdownload.soe.ucsc.edu/goldenPath/danRer7/database/chromAlias.txt.gz",
+      "source_format": "ucsc-chromAlias-table: alias<TAB>chrom<TAB>source",
+      "upstream_file": "upstream/danRer7.chromAlias.txt.gz",
+      "sha256": "d18b7fb3787b1acd67a1618615a4fb42c6cde1f9571e69f21d0d971e58a9a177",
+      "upstream_last_modified": "Sun, 18 Feb 2018 14:10:44 GMT",
+      "retrieved": "2026-10-02",
+      "registry_file": "data/danRer7.tsv",
+      "label_corrections": [],
+      "catalog": {
+        "organism": "Zebrafish",
+        "common_name": "Zebrafish",
+        "scientific_name": "Danio rerio",
+        "tax_id": 7955,
+        "description": "Jul. 2010 (Zv9/danRer7)",
+        "source_name": "Wellcome Trust Sanger Institute Zv9 (GCA_000002035.2)"
+      },
+      "audit": {
+        "audit_date": "2026-10-02",
+        "audit_catalog_sha256": "f8da527c7a925f623569440cf7aedb39339ea874feed8d0db9666fba3889743f",
+        "status": "PASS",
+        "reason_codes": [
+          "PASS"
+        ],
+        "sequence_records": 1133,
+        "alias_rows": 1133
+      },
+      "canonical_id": "danRer7",
+      "canonical_id_basis": "ucsc-db"
+    },
+    {
+      "assembly_id": "echTel2",
+      "ucsc_db": "echTel2",
+      "source_url": "https://hgdownload.soe.ucsc.edu/goldenPath/echTel2/database/chromAlias.txt.gz",
+      "source_format": "ucsc-chromAlias-table: alias<TAB>chrom<TAB>source",
+      "upstream_file": "upstream/echTel2.chromAlias.txt.gz",
+      "sha256": "cace968d98b66311f88ac2830200c7e64e35485d93fdbb0d33b336c413b65e62",
+      "upstream_last_modified": "Sun, 18 Feb 2018 14:21:39 GMT",
+      "retrieved": "2026-10-02",
+      "registry_file": "data/echTel2.tsv",
+      "label_corrections": [],
+      "catalog": {
+        "organism": "Tenrec",
+        "common_name": "Tenrec",
+        "scientific_name": "Echinops telfairi",
+        "tax_id": 9371,
+        "description": "Nov. 2012 (Broad/echTel2)",
+        "source_name": "Broad/EchTel2.0"
+      },
+      "audit": {
+        "audit_date": "2026-10-02",
+        "audit_catalog_sha256": "f8da527c7a925f623569440cf7aedb39339ea874feed8d0db9666fba3889743f",
+        "status": "PASS",
+        "reason_codes": [
+          "PASS"
+        ],
+        "sequence_records": 8402,
+        "alias_rows": 16803
+      },
+      "canonical_id": "echTel2",
+      "canonical_id_basis": "ucsc-db"
+    },
+    {
+      "assembly_id": "equCab2",
+      "ucsc_db": "equCab2",
+      "source_url": "https://hgdownload.soe.ucsc.edu/goldenPath/equCab2/database/chromAlias.txt.gz",
+      "source_format": "ucsc-chromAlias-table: alias<TAB>chrom<TAB>source",
+      "upstream_file": "upstream/equCab2.chromAlias.txt.gz",
+      "sha256": "91564e5b9f9509613fd3ec9ac74b07ece3433042ce3fd685cde42845f5d13b95",
+      "upstream_last_modified": "Sun, 05 Aug 2018 13:29:23 GMT",
+      "retrieved": "2026-10-02",
+      "registry_file": "data/equCab2.tsv",
+      "label_corrections": [],
+      "catalog": {
+        "organism": "Horse",
+        "common_name": "Horse",
+        "scientific_name": "Equus caballus",
+        "tax_id": 9796,
+        "description": "Sep. 2007 (Broad/equCab2)",
+        "source_name": "Broad Institute EquCab2"
+      },
+      "audit": {
+        "audit_date": "2026-10-02",
+        "audit_catalog_sha256": "f8da527c7a925f623569440cf7aedb39339ea874feed8d0db9666fba3889743f",
+        "status": "PASS",
+        "reason_codes": [
+          "PASS"
+        ],
+        "sequence_records": 33,
+        "alias_rows": 98
+      },
+      "canonical_id": "equCab2",
+      "canonical_id_basis": "ucsc-db"
+    },
+    {
+      "assembly_id": "equCab3",
+      "ucsc_db": "equCab3",
+      "source_url": "https://hgdownload.soe.ucsc.edu/goldenPath/equCab3/database/chromAlias.txt.gz",
+      "source_format": "ucsc-chromAlias-table: alias<TAB>chrom<TAB>source",
+      "upstream_file": "upstream/equCab3.chromAlias.txt.gz",
+      "sha256": "7f0276be4404d46d50afe8434c309119c932bd13682bdd07194b77d04003ce69",
+      "upstream_last_modified": "Fri, 26 Jul 2019 00:00:54 GMT",
+      "retrieved": "2026-10-02",
+      "registry_file": "data/equCab3.tsv",
+      "label_corrections": [],
+      "catalog": {
+        "organism": "Horse",
+        "common_name": "Horse",
+        "scientific_name": "Equus caballus",
+        "tax_id": 9796,
+        "description": "Jan. 2018 (EquCab3.0/equCab3)",
+        "source_name": "University of Louisville"
+      },
+      "audit": {
+        "audit_date": "2026-10-02",
+        "audit_catalog_sha256": "f8da527c7a925f623569440cf7aedb39339ea874feed8d0db9666fba3889743f",
+        "status": "PASS",
+        "reason_codes": [
+          "PASS"
+        ],
+        "sequence_records": 4701,
+        "alias_rows": 9435
+      },
+      "canonical_id": "EquCab3.0",
+      "canonical_id_basis": "ucsc-description-token"
+    },
+    {
+      "assembly_id": "eriEur2",
+      "ucsc_db": "eriEur2",
+      "source_url": "https://hgdownload.soe.ucsc.edu/goldenPath/eriEur2/database/chromAlias.txt.gz",
+      "source_format": "ucsc-chromAlias-table: alias<TAB>chrom<TAB>source",
+      "upstream_file": "upstream/eriEur2.chromAlias.txt.gz",
+      "sha256": "7d1c4a164a6def1b28cae2b4782b1d685d78d8a488c15dd82d93df0fefcda494",
+      "upstream_last_modified": "Sun, 18 Feb 2018 14:25:38 GMT",
+      "retrieved": "2026-10-02",
+      "registry_file": "data/eriEur2.tsv",
+      "label_corrections": [],
+      "catalog": {
+        "organism": "Hedgehog",
+        "common_name": "Hedgehog",
+        "scientific_name": "Erinaceus europaeus",
+        "tax_id": 9365,
+        "description": "May 2012 (EriEur2.0/eriEur2)",
+        "source_name": "Broad Institute EriEur2.0"
+      },
+      "audit": {
+        "audit_date": "2026-10-02",
+        "audit_catalog_sha256": "f8da527c7a925f623569440cf7aedb39339ea874feed8d0db9666fba3889743f",
+        "status": "PASS",
+        "reason_codes": [
+          "PASS"
+        ],
+        "sequence_records": 5803,
+        "alias_rows": 11605
+      },
+      "canonical_id": "eriEur2",
+      "canonical_id_basis": "ucsc-db"
+    },
+    {
+      "assembly_id": "felCat5",
+      "ucsc_db": "felCat5",
+      "source_url": "https://hgdownload.soe.ucsc.edu/goldenPath/felCat5/database/chromAlias.txt.gz",
+      "source_format": "ucsc-chromAlias-table: alias<TAB>chrom<TAB>source",
+      "upstream_file": "upstream/felCat5.chromAlias.txt.gz",
+      "sha256": "8e4a63eb81ba826f1e3fc108f0fe565926274354bd9594a8b83ef606f5a96ae6",
+      "upstream_last_modified": "Sun, 04 Feb 2018 15:02:43 GMT",
+      "retrieved": "2026-10-02",
+      "registry_file": "data/felCat5.tsv",
+      "label_corrections": [],
+      "catalog": {
+        "organism": "Cat",
+        "common_name": "Cat",
+        "scientific_name": "Felis catus",
+        "tax_id": 9685,
+        "description": "Sep. 2011 (ICGSC Felis_catus 6.2/felCat5)",
+        "source_name": "International Cat Genome Sequencing Consortium Felis_catus-6.2 (NCBI project 16726, accession AANG00000000.2, GCA_000181335.2)"
+      },
+      "audit": {
+        "audit_date": "2026-10-02",
+        "audit_catalog_sha256": "f8da527c7a925f623569440cf7aedb39339ea874feed8d0db9666fba3889743f",
+        "status": "PASS",
+        "reason_codes": [
+          "PASS"
+        ],
+        "sequence_records": 5500,
+        "alias_rows": 11018
+      },
+      "canonical_id": "felCat5",
+      "canonical_id_basis": "ucsc-db"
+    },
+    {
+      "assembly_id": "felCat9",
+      "ucsc_db": "felCat9",
+      "source_url": "https://hgdownload.soe.ucsc.edu/goldenPath/felCat9/database/chromAlias.txt.gz",
+      "source_format": "ucsc-chromAlias-table: alias<TAB>chrom<TAB>source",
+      "upstream_file": "upstream/felCat9.chromAlias.txt.gz",
+      "sha256": "7ebf3f56a634607fd63173a5de8eb60bd3cdb364dc88bbaf70e2a4200b300e2a",
+      "upstream_last_modified": "Mon, 06 May 2019 20:09:34 GMT",
+      "retrieved": "2026-10-02",
+      "registry_file": "data/felCat9.tsv",
+      "label_corrections": [],
+      "catalog": {
+        "organism": "Cat",
+        "common_name": "Cat",
+        "scientific_name": "Felis catus",
+        "tax_id": 9685,
+        "description": "Nov. 2017 (Felis_catus_9.0/felCat9)",
+        "source_name": "Genome Sequencing Center (GSC) at Washington University (WashU) School of Medicine"
+      },
+      "audit": {
+        "audit_date": "2026-10-02",
+        "audit_catalog_sha256": "f8da527c7a925f623569440cf7aedb39339ea874feed8d0db9666fba3889743f",
+        "status": "PASS",
+        "reason_codes": [
+          "PASS"
+        ],
+        "sequence_records": 4508,
+        "alias_rows": 9036
+      },
+      "canonical_id": "Felis_catus_9.0",
+      "canonical_id_basis": "ucsc-description-token"
+    },
+    {
+      "assembly_id": "fr2",
+      "ucsc_db": "fr2",
+      "source_url": "https://hgdownload.soe.ucsc.edu/goldenPath/fr2/database/chromAlias.txt.gz",
+      "source_format": "ucsc-chromAlias-table: alias<TAB>chrom<TAB>source",
+      "upstream_file": "upstream/fr2.chromAlias.txt.gz",
+      "sha256": "088bc9cadd4c0fbc25511d6253279d1fab5712b326a81979b8c20f9274b64f1d",
+      "upstream_last_modified": "Sun, 05 Aug 2018 13:34:58 GMT",
+      "retrieved": "2026-10-02",
+      "registry_file": "data/fr2.tsv",
+      "label_corrections": [],
+      "catalog": {
+        "organism": "Fugu",
+        "common_name": "Fugu",
+        "scientific_name": "Takifugu rubripes",
+        "tax_id": 31033,
+        "description": "Oct. 2004 (JGI 4.0/fr2)",
+        "source_name": "JGI V4.0"
+      },
+      "audit": {
+        "audit_date": "2026-10-02",
+        "audit_catalog_sha256": "f8da527c7a925f623569440cf7aedb39339ea874feed8d0db9666fba3889743f",
+        "status": "PASS",
+        "reason_codes": [
+          "PASS"
+        ],
+        "sequence_records": 1,
+        "alias_rows": 1
+      },
+      "canonical_id": "fr2",
+      "canonical_id_basis": "ucsc-db"
+    },
+    {
+      "assembly_id": "fr3",
+      "ucsc_db": "fr3",
+      "source_url": "https://hgdownload.soe.ucsc.edu/goldenPath/fr3/database/chromAlias.txt.gz",
+      "source_format": "ucsc-chromAlias-table: alias<TAB>chrom<TAB>source",
+      "upstream_file": "upstream/fr3.chromAlias.txt.gz",
+      "sha256": "3d77b3ae7c1a99791476b826ec2ec26348e8e8be07ed9fa1d1d64b843fb1a1da",
+      "upstream_last_modified": "Sun, 10 Feb 2019 11:41:43 GMT",
+      "retrieved": "2026-10-02",
+      "registry_file": "data/fr3.tsv",
+      "label_corrections": [],
+      "catalog": {
+        "organism": "Fugu",
+        "common_name": "Fugu",
+        "scientific_name": "Takifugu rubripes",
+        "tax_id": 31033,
+        "description": "Oct. 2011 (FUGU5/fr3)",
+        "source_name": "Fugu Genome Sequencing Consortium - FUGU5 (NCBI project 1434, GCA_000180615.2)"
+      },
+      "audit": {
+        "audit_date": "2026-10-02",
+        "audit_catalog_sha256": "f8da527c7a925f623569440cf7aedb39339ea874feed8d0db9666fba3889743f",
+        "status": "PASS",
+        "reason_codes": [
+          "PASS"
+        ],
+        "sequence_records": 6835,
+        "alias_rows": 13693
+      },
+      "canonical_id": "fr3",
+      "canonical_id_basis": "ucsc-db"
+    },
+    {
+      "assembly_id": "galGal6",
+      "ucsc_db": "galGal6",
+      "source_url": "https://hgdownload.soe.ucsc.edu/goldenPath/galGal6/database/chromAlias.txt.gz",
+      "source_format": "ucsc-chromAlias-table: alias<TAB>chrom<TAB>source",
+      "upstream_file": "upstream/galGal6.chromAlias.txt.gz",
+      "sha256": "2c6d4edad712eaa3c9b4c9d66bc1e7db7fe59e4e5f7e76744c1273a53b75b814",
+      "upstream_last_modified": "Sun, 10 Feb 2019 11:41:45 GMT",
+      "retrieved": "2026-10-02",
+      "registry_file": "data/galGal6.tsv",
+      "label_corrections": [],
+      "catalog": {
+        "organism": "Chicken",
+        "common_name": "Chicken",
+        "scientific_name": "Gallus gallus",
+        "tax_id": 9031,
+        "description": "Mar. 2018 (GRCg6a/galGal6)",
+        "source_name": "Genome Reference Consortium"
+      },
+      "audit": {
+        "audit_date": "2026-10-02",
+        "audit_catalog_sha256": "f8da527c7a925f623569440cf7aedb39339ea874feed8d0db9666fba3889743f",
+        "status": "PASS",
+        "reason_codes": [
+          "PASS"
+        ],
+        "sequence_records": 464,
+        "alias_rows": 963
+      },
+      "canonical_id": "GRCg6a",
+      "canonical_id_basis": "ucsc-description-token"
+    },
+    {
+      "assembly_id": "gasAcu1",
+      "ucsc_db": "gasAcu1",
+      "source_url": "https://hgdownload.soe.ucsc.edu/goldenPath/gasAcu1/database/chromAlias.txt.gz",
+      "source_format": "ucsc-chromAlias-table: alias<TAB>chrom<TAB>source",
+      "upstream_file": "upstream/gasAcu1.chromAlias.txt.gz",
+      "sha256": "75587dba15789068f0e0b6be5771f9c7551d4690551d29ad15ea9e11b4f43ce0",
+      "upstream_last_modified": "Sun, 05 Aug 2018 13:45:53 GMT",
+      "retrieved": "2026-10-02",
+      "registry_file": "data/gasAcu1.tsv",
+      "label_corrections": [],
+      "catalog": {
+        "organism": "Stickleback",
+        "common_name": "Stickleback",
+        "scientific_name": "Gasterosteus aculeatus",
+        "tax_id": 69293,
+        "description": "Feb. 2006 (Broad/gasAcu1)",
+        "source_name": "Broad Institute gasAcu1 (1.0) (NCBI project 13579, AANH01000000)"
+      },
+      "audit": {
+        "audit_date": "2026-10-02",
+        "audit_catalog_sha256": "f8da527c7a925f623569440cf7aedb39339ea874feed8d0db9666fba3889743f",
+        "status": "PASS",
+        "reason_codes": [
+          "PASS"
+        ],
+        "sequence_records": 22,
+        "alias_rows": 22
+      },
+      "canonical_id": "gasAcu1",
+      "canonical_id_basis": "ucsc-db"
+    },
+    {
+      "assembly_id": "gorGor3",
+      "ucsc_db": "gorGor3",
+      "source_url": "https://hgdownload.soe.ucsc.edu/goldenPath/gorGor3/database/chromAlias.txt.gz",
+      "source_format": "ucsc-chromAlias-table: alias<TAB>chrom<TAB>source",
+      "upstream_file": "upstream/gorGor3.chromAlias.txt.gz",
+      "sha256": "557d81867b6d103be8c6f1128d2e8fca47633e36de5b13eba2384699e5a4235c",
+      "upstream_last_modified": "Fri, 16 Sep 2016 00:59:00 GMT",
+      "retrieved": "2026-10-02",
+      "registry_file": "data/gorGor3.tsv",
+      "label_corrections": [],
+      "catalog": {
+        "organism": "Gorilla",
+        "common_name": "Gorilla",
+        "scientific_name": "Gorilla gorilla gorilla",
+        "tax_id": 9595,
+        "description": "May 2011 (gorGor3.1/gorGor3)",
+        "source_name": "Wellcome Trust Sanger Institute May 2011 (NCBI project 31265, GCA_000151905.1)"
+      },
+      "audit": {
+        "audit_date": "2026-10-02",
+        "audit_catalog_sha256": "f8da527c7a925f623569440cf7aedb39339ea874feed8d0db9666fba3889743f",
+        "status": "PASS",
+        "reason_codes": [
+          "PASS"
+        ],
+        "sequence_records": 25,
+        "alias_rows": 25
+      },
+      "canonical_id": "gorGor3",
+      "canonical_id_basis": "ucsc-db"
+    },
+    {
+      "assembly_id": "gorGor6",
+      "ucsc_db": "gorGor6",
+      "source_url": "https://hgdownload.soe.ucsc.edu/goldenPath/gorGor6/database/chromAlias.txt.gz",
+      "source_format": "ucsc-chromAlias-table: alias<TAB>chrom<TAB>source",
+      "upstream_file": "upstream/gorGor6.chromAlias.txt.gz",
+      "sha256": "82bd1097ea3015a2d1dbb837f1261e79361177904bcc59d1013aba4ed23b6b02",
+      "upstream_last_modified": "Tue, 19 Nov 2019 21:47:10 GMT",
+      "retrieved": "2026-10-02",
+      "registry_file": "data/gorGor6.tsv",
+      "label_corrections": [],
+      "catalog": {
+        "organism": "Gorilla",
+        "common_name": "Gorilla",
+        "scientific_name": "Gorilla gorilla gorilla",
+        "tax_id": 9595,
+        "description": "Aug. 2019 (Kamilah_GGO_v0/gorGor6)",
+        "source_name": "University of Washington"
+      },
+      "audit": {
+        "audit_date": "2026-10-02",
+        "audit_catalog_sha256": "f8da527c7a925f623569440cf7aedb39339ea874feed8d0db9666fba3889743f",
+        "status": "PASS",
+        "reason_codes": [
+          "PASS"
+        ],
+        "sequence_records": 5486,
+        "alias_rows": 10972
+      },
+      "canonical_id": "gorGor6",
+      "canonical_id_basis": "ucsc-db"
+    },
+    {
+      "assembly_id": "hetGla2",
+      "ucsc_db": "hetGla2",
+      "source_url": "https://hgdownload.soe.ucsc.edu/goldenPath/hetGla2/database/chromAlias.txt.gz",
+      "source_format": "ucsc-chromAlias-table: alias<TAB>chrom<TAB>source",
+      "upstream_file": "upstream/hetGla2.chromAlias.txt.gz",
+      "sha256": "e45efd8c259c658a432a2a5c47d745abd3aa08618f94d70e966fede21de2ac8b",
+      "upstream_last_modified": "Sun, 18 Feb 2018 14:45:17 GMT",
+      "retrieved": "2026-10-02",
+      "registry_file": "data/hetGla2.tsv",
+      "label_corrections": [],
+      "catalog": {
+        "organism": "Naked mole-rat",
+        "common_name": "Naked mole-rat",
+        "scientific_name": "Heterocephalus glaber",
+        "tax_id": 10181,
+        "description": "Jan. 2012 (Broad HetGla_female_1.0/hetGla2)",
+        "source_name": "Broad Institute HetGla_female_1.0 (NCBI project 72441, GCA_000247695.1, WGS AHKG01)"
+      },
+      "audit": {
+        "audit_date": "2026-10-02",
+        "audit_catalog_sha256": "f8da527c7a925f623569440cf7aedb39339ea874feed8d0db9666fba3889743f",
+        "status": "PASS",
+        "reason_codes": [
+          "PASS"
+        ],
+        "sequence_records": 4229,
+        "alias_rows": 8458
+      },
+      "canonical_id": "hetGla2",
+      "canonical_id_basis": "ucsc-db"
+    },
+    {
+      "assembly_id": "loxAfr3",
+      "ucsc_db": "loxAfr3",
+      "source_url": "https://hgdownload.soe.ucsc.edu/goldenPath/loxAfr3/database/chromAlias.txt.gz",
+      "source_format": "ucsc-chromAlias-table: alias<TAB>chrom<TAB>source",
+      "upstream_file": "upstream/loxAfr3.chromAlias.txt.gz",
+      "sha256": "d28176eece940540f028f869b176daf1daffc8c0c688123b11d5f453ded6b539",
+      "upstream_last_modified": "Sun, 05 Aug 2018 15:02:57 GMT",
+      "retrieved": "2026-10-02",
+      "registry_file": "data/loxAfr3.tsv",
+      "label_corrections": [],
+      "catalog": {
+        "organism": "Elephant",
+        "common_name": "Elephant",
+        "scientific_name": "Loxodonta africana",
+        "tax_id": 9785,
+        "description": "Jul. 2009 (Broad/loxAfr3)",
+        "source_name": "Broad Institute loxAfr3 (NCBI project 12569, AAGU03000000)"
+      },
+      "audit": {
+        "audit_date": "2026-10-02",
+        "audit_catalog_sha256": "f8da527c7a925f623569440cf7aedb39339ea874feed8d0db9666fba3889743f",
+        "status": "PASS",
+        "reason_codes": [
+          "PASS"
+        ],
+        "sequence_records": 2353,
+        "alias_rows": 4704
+      },
+      "canonical_id": "loxAfr3",
+      "canonical_id_basis": "ucsc-db"
+    },
+    {
+      "assembly_id": "macFas5",
+      "ucsc_db": "macFas5",
+      "source_url": "https://hgdownload.soe.ucsc.edu/goldenPath/macFas5/database/chromAlias.txt.gz",
+      "source_format": "ucsc-chromAlias-table: alias<TAB>chrom<TAB>source",
+      "upstream_file": "upstream/macFas5.chromAlias.txt.gz",
+      "sha256": "b6f0b2bbcda7eebe97b3d868bd4df911d07d49453741223088430d9cc06629ab",
+      "upstream_last_modified": "Sun, 04 Feb 2018 16:05:51 GMT",
+      "retrieved": "2026-10-02",
+      "registry_file": "data/macFas5.tsv",
+      "label_corrections": [],
+      "catalog": {
+        "organism": "Crab-eating macaque",
+        "common_name": "Crab-eating macaque",
+        "scientific_name": "Macaca fascicularis",
+        "tax_id": 9541,
+        "description": "Jun. 2013 (Macaca_fascicularis_5.0/macFas5)",
+        "source_name": "Washington University (WashU) GCA_000364345.1"
+      },
+      "audit": {
+        "audit_date": "2026-10-02",
+        "audit_catalog_sha256": "f8da527c7a925f623569440cf7aedb39339ea874feed8d0db9666fba3889743f",
+        "status": "PASS",
+        "reason_codes": [
+          "PASS"
+        ],
+        "sequence_records": 7601,
+        "alias_rows": 15224
+      },
+      "canonical_id": "macFas5",
+      "canonical_id_basis": "ucsc-db"
+    },
+    {
+      "assembly_id": "melGal1",
+      "ucsc_db": "melGal1",
+      "source_url": "https://hgdownload.soe.ucsc.edu/goldenPath/melGal1/database/chromAlias.txt.gz",
+      "source_format": "ucsc-chromAlias-table: alias<TAB>chrom<TAB>source",
+      "upstream_file": "upstream/melGal1.chromAlias.txt.gz",
+      "sha256": "e909cb5e9bb33699f8f80a17afb9486f015b928097afde5d04bf14a55d7d46d7",
+      "upstream_last_modified": "Sun, 05 Aug 2018 15:06:39 GMT",
+      "retrieved": "2026-10-02",
+      "registry_file": "data/melGal1.tsv",
+      "label_corrections": [],
+      "catalog": {
+        "organism": "Turkey",
+        "common_name": "Turkey",
+        "scientific_name": "Meleagris gallopavo",
+        "tax_id": 9103,
+        "description": "Dec. 2009 (TGC Turkey_2.01/melGal1)",
+        "source_name": "TGC (NCBI Project ID: 10805, Accession: GCA_000146605.1)"
+      },
+      "audit": {
+        "audit_date": "2026-10-02",
+        "audit_catalog_sha256": "f8da527c7a925f623569440cf7aedb39339ea874feed8d0db9666fba3889743f",
+        "status": "PASS",
+        "reason_codes": [
+          "PASS"
+        ],
+        "sequence_records": 5890,
+        "alias_rows": 11812
+      },
+      "canonical_id": "melGal1",
+      "canonical_id_basis": "ucsc-db"
+    },
+    {
+      "assembly_id": "mm10",
+      "ucsc_db": "mm10",
+      "source_url": "https://hgdownload.soe.ucsc.edu/goldenPath/mm10/database/chromAlias.txt.gz",
+      "source_format": "ucsc-chromAlias-table: alias<TAB>chrom<TAB>source",
+      "upstream_file": "upstream/mm10.chromAlias.txt.gz",
+      "sha256": "fd4eae0de922ea9edf1ed9e79c5684afc0b7b9b08bcb0441053e981dfa5c97c1",
+      "upstream_last_modified": "Wed, 21 Apr 2021 08:56:30 GMT",
+      "retrieved": "2026-10-02",
+      "registry_file": "data/mm10.tsv",
+      "label_corrections": [],
+      "catalog": {
+        "organism": "Mouse",
+        "common_name": "Mouse",
+        "scientific_name": "Mus musculus",
+        "tax_id": 10090,
+        "description": "Dec. 2011 (GRCm38/mm10)",
+        "source_name": "Genome Reference Consortium Mouse Build 38 (GCA_000001635.2)"
+      },
+      "audit": {
+        "audit_date": "2026-10-02",
+        "audit_catalog_sha256": "f8da527c7a925f623569440cf7aedb39339ea874feed8d0db9666fba3889743f",
+        "status": "PASS",
+        "reason_codes": [
+          "PASS"
+        ],
+        "sequence_records": 239,
+        "alias_rows": 717
+      },
+      "canonical_id": "GRCm38",
+      "canonical_id_basis": "ucsc-description-token"
+    },
+    {
+      "assembly_id": "monDom5",
+      "ucsc_db": "monDom5",
+      "source_url": "https://hgdownload.soe.ucsc.edu/goldenPath/monDom5/database/chromAlias.txt.gz",
+      "source_format": "ucsc-chromAlias-table: alias<TAB>chrom<TAB>source",
+      "upstream_file": "upstream/monDom5.chromAlias.txt.gz",
+      "sha256": "d81016db6247f6004e36920ae7ff7abf09e6114a31f547b860356afd8bf14d89",
+      "upstream_last_modified": "Sun, 03 Sep 2017 12:42:10 GMT",
+      "retrieved": "2026-10-02",
+      "registry_file": "data/monDom5.tsv",
+      "label_corrections": [],
+      "catalog": {
+        "organism": "Opossum",
+        "common_name": "Opossum",
+        "scientific_name": "Monodelphis domestica",
+        "tax_id": 13616,
+        "description": "Oct. 2006 (Broad/monDom5)",
+        "source_name": "Broad Institute monDom5 (NCBI project 12561, accession AAFR03000000)"
+      },
+      "audit": {
+        "audit_date": "2026-10-02",
+        "audit_catalog_sha256": "f8da527c7a925f623569440cf7aedb39339ea874feed8d0db9666fba3889743f",
+        "status": "PASS",
+        "reason_codes": [
+          "PASS"
+        ],
+        "sequence_records": 11,
+        "alias_rows": 30
+      },
+      "canonical_id": "monDom5",
+      "canonical_id_basis": "ucsc-db"
+    },
+    {
+      "assembly_id": "musFur1",
+      "ucsc_db": "musFur1",
+      "source_url": "https://hgdownload.soe.ucsc.edu/goldenPath/musFur1/database/chromAlias.txt.gz",
+      "source_format": "ucsc-chromAlias-table: alias<TAB>chrom<TAB>source",
+      "upstream_file": "upstream/musFur1.chromAlias.txt.gz",
+      "sha256": "a5469800761671a7ddb4257d8e616a2b9de133c9d11299e91b6d9104ab067e68",
+      "upstream_last_modified": "Sun, 05 Aug 2018 15:19:51 GMT",
+      "retrieved": "2026-10-02",
+      "registry_file": "data/musFur1.tsv",
+      "label_corrections": [],
+      "catalog": {
+        "organism": "Ferret ",
+        "common_name": "Ferret ",
+        "scientific_name": "Mustela putorius furo",
+        "tax_id": 9669,
+        "description": "Apr. 2011 (MusPutFur1.0/musFur1)",
+        "source_name": "Ferret Genome Sequencing Consortium"
+      },
+      "audit": {
+        "audit_date": "2026-10-02",
+        "audit_catalog_sha256": "f8da527c7a925f623569440cf7aedb39339ea874feed8d0db9666fba3889743f",
+        "status": "PASS",
+        "reason_codes": [
+          "PASS"
+        ],
+        "sequence_records": 7741,
+        "alias_rows": 7741
+      },
+      "canonical_id": "musFur1",
+      "canonical_id_basis": "ucsc-db"
+    },
+    {
+      "assembly_id": "neoSch1",
+      "ucsc_db": "neoSch1",
+      "source_url": "https://hgdownload.soe.ucsc.edu/goldenPath/neoSch1/database/chromAlias.txt.gz",
+      "source_format": "ucsc-chromAlias-table: alias<TAB>chrom<TAB>source",
+      "upstream_file": "upstream/neoSch1.chromAlias.txt.gz",
+      "sha256": "645361dd5abca9f5064a88bbcd1f46a4bebfdd622c7dd22bd930e22ea6a7531d",
+      "upstream_last_modified": "Sat, 23 Sep 2017 03:53:57 GMT",
+      "retrieved": "2026-10-02",
+      "registry_file": "data/neoSch1.tsv",
+      "label_corrections": [],
+      "catalog": {
+        "organism": "Hawaiian monk seal",
+        "common_name": "Hawaiian monk seal",
+        "scientific_name": "Neomonachus schauinslandi",
+        "tax_id": 29088,
+        "description": "Jun. 2017 (ASM220157v1/neoSch1)",
+        "source_name": "Johns Hopkins University"
+      },
+      "audit": {
+        "audit_date": "2026-10-02",
+        "audit_catalog_sha256": "f8da527c7a925f623569440cf7aedb39339ea874feed8d0db9666fba3889743f",
+        "status": "PASS",
+        "reason_codes": [
+          "PASS"
+        ],
+        "sequence_records": 7872,
+        "alias_rows": 15744
+      },
+      "canonical_id": "neoSch1",
+      "canonical_id_basis": "ucsc-db"
+    },
+    {
+      "assembly_id": "oreNil2",
+      "ucsc_db": "oreNil2",
+      "source_url": "https://hgdownload.soe.ucsc.edu/goldenPath/oreNil2/database/chromAlias.txt.gz",
+      "source_format": "ucsc-chromAlias-table: alias<TAB>chrom<TAB>source",
+      "upstream_file": "upstream/oreNil2.chromAlias.txt.gz",
+      "sha256": "f76c7dd8b8e566b704a8ed35625d8fb58ebcb0b8d6f118ebf95943fa0e7854d4",
+      "upstream_last_modified": "Sun, 18 Feb 2018 15:44:48 GMT",
+      "retrieved": "2026-10-02",
+      "registry_file": "data/oreNil2.tsv",
+      "label_corrections": [],
+      "catalog": {
+        "organism": "Nile tilapia",
+        "common_name": "Nile tilapia",
+        "scientific_name": "Oreochromis niloticus",
+        "tax_id": 8128,
+        "description": "Jan. 2011 (Broad oreNil1.1/oreNil2)",
+        "source_name": "Broad Institute of MIT and Harvard Orenil1.1 (GCA_000188235.2)"
+      },
+      "audit": {
+        "audit_date": "2026-10-02",
+        "audit_catalog_sha256": "f8da527c7a925f623569440cf7aedb39339ea874feed8d0db9666fba3889743f",
+        "status": "PASS",
+        "reason_codes": [
+          "PASS"
+        ],
+        "sequence_records": 5678,
+        "alias_rows": 11356
+      },
+      "canonical_id": "oreNil2",
+      "canonical_id_basis": "ucsc-db"
+    },
+    {
+      "assembly_id": "oryCun2",
+      "ucsc_db": "oryCun2",
+      "source_url": "https://hgdownload.soe.ucsc.edu/goldenPath/oryCun2/database/chromAlias.txt.gz",
+      "source_format": "ucsc-chromAlias-table: alias<TAB>chrom<TAB>source",
+      "upstream_file": "upstream/oryCun2.chromAlias.txt.gz",
+      "sha256": "acb53ee81271c65b80d78ef413a1771e622bee57445dd0aaf07400c51f9bdda9",
+      "upstream_last_modified": "Sun, 05 Aug 2018 15:35:15 GMT",
+      "retrieved": "2026-10-02",
+      "registry_file": "data/oryCun2.tsv",
+      "label_corrections": [],
+      "catalog": {
+        "organism": "Rabbit",
+        "common_name": "Rabbit",
+        "scientific_name": "Oryctolagus cuniculus",
+        "tax_id": 9986,
+        "description": "Apr. 2009 (Broad/oryCun2)",
+        "source_name": "Broad Institute oryCun2 (NCBI project 12819, AAGW00000000)"
+      },
+      "audit": {
+        "audit_date": "2026-10-02",
+        "audit_catalog_sha256": "f8da527c7a925f623569440cf7aedb39339ea874feed8d0db9666fba3889743f",
+        "status": "PASS",
+        "reason_codes": [
+          "PASS"
+        ],
+        "sequence_records": 3242,
+        "alias_rows": 3242
+      },
+      "canonical_id": "oryCun2",
+      "canonical_id_basis": "ucsc-db"
+    },
+    {
+      "assembly_id": "oryLat2",
+      "ucsc_db": "oryLat2",
+      "source_url": "https://hgdownload.soe.ucsc.edu/goldenPath/oryLat2/database/chromAlias.txt.gz",
+      "source_format": "ucsc-chromAlias-table: alias<TAB>chrom<TAB>source",
+      "upstream_file": "upstream/oryLat2.chromAlias.txt.gz",
+      "sha256": "5e588f995d44fce78d2882b4e0d822e2b920faaf15cf7c8e6a8b156e4ebc39e4",
+      "upstream_last_modified": "Sun, 05 Aug 2018 15:36:50 GMT",
+      "retrieved": "2026-10-02",
+      "registry_file": "data/oryLat2.tsv",
+      "label_corrections": [],
+      "catalog": {
+        "organism": "Medaka",
+        "common_name": "Medaka",
+        "scientific_name": "Oryzias latipes",
+        "tax_id": 8090,
+        "description": "Oct. 2005 (NIG/UT MEDAKA1/oryLat2)",
+        "source_name": "NIG and Tokyo Univ MEDAKA1 (NCBI project 16702, BAAF04000000)"
+      },
+      "audit": {
+        "audit_date": "2026-10-02",
+        "audit_catalog_sha256": "f8da527c7a925f623569440cf7aedb39339ea874feed8d0db9666fba3889743f",
+        "status": "PASS",
+        "reason_codes": [
+          "PASS"
+        ],
+        "sequence_records": 7189,
+        "alias_rows": 7189
+      },
+      "canonical_id": "oryLat2",
+      "canonical_id_basis": "ucsc-db"
+    },
+    {
+      "assembly_id": "otoGar3",
+      "ucsc_db": "otoGar3",
+      "source_url": "https://hgdownload.soe.ucsc.edu/goldenPath/otoGar3/database/chromAlias.txt.gz",
+      "source_format": "ucsc-chromAlias-table: alias<TAB>chrom<TAB>source",
+      "upstream_file": "upstream/otoGar3.chromAlias.txt.gz",
+      "sha256": "3962534efc2d0e0d177076347db7f3d2577bcf32a9ae33f28a01caef05356e0e",
+      "upstream_last_modified": "Sun, 18 Feb 2018 15:56:47 GMT",
+      "retrieved": "2026-10-02",
+      "registry_file": "data/otoGar3.tsv",
+      "label_corrections": [],
+      "catalog": {
+        "organism": "Bushbaby",
+        "common_name": "Bushbaby",
+        "scientific_name": "Otolemur garnettii",
+        "tax_id": 30611,
+        "description": "Mar. 2011 (Broad/otoGar3)",
+        "source_name": "Broad Institute (GCA_000181295.3)"
+      },
+      "audit": {
+        "audit_date": "2026-10-02",
+        "audit_catalog_sha256": "f8da527c7a925f623569440cf7aedb39339ea874feed8d0db9666fba3889743f",
+        "status": "PASS",
+        "reason_codes": [
+          "PASS"
+        ],
+        "sequence_records": 7793,
+        "alias_rows": 15586
+      },
+      "canonical_id": "otoGar3",
+      "canonical_id_basis": "ucsc-db"
+    },
+    {
+      "assembly_id": "oviAri3",
+      "ucsc_db": "oviAri3",
+      "source_url": "https://hgdownload.soe.ucsc.edu/goldenPath/oviAri3/database/chromAlias.txt.gz",
+      "source_format": "ucsc-chromAlias-table: alias<TAB>chrom<TAB>source",
+      "upstream_file": "upstream/oviAri3.chromAlias.txt.gz",
+      "sha256": "f1b1831c7e5481b3edf01b53c7a9b87ecdc65a04313f1fe149e4829aea2d33f4",
+      "upstream_last_modified": "Sun, 18 Feb 2018 15:59:58 GMT",
+      "retrieved": "2026-10-02",
+      "registry_file": "data/oviAri3.tsv",
+      "label_corrections": [],
+      "catalog": {
+        "organism": "Sheep",
+        "common_name": "Sheep",
+        "scientific_name": "Ovis aries",
+        "tax_id": 9940,
+        "description": "Aug. 2012 (ISGC Oar_v3.1/oviAri3)",
+        "source_name": "International Sheep Genome Consortium"
+      },
+      "audit": {
+        "audit_date": "2026-10-02",
+        "audit_catalog_sha256": "f8da527c7a925f623569440cf7aedb39339ea874feed8d0db9666fba3889743f",
+        "status": "PASS",
+        "reason_codes": [
+          "PASS"
+        ],
+        "sequence_records": 5698,
+        "alias_rows": 11423
+      },
+      "canonical_id": "oviAri3",
+      "canonical_id_basis": "ucsc-db"
+    },
+    {
+      "assembly_id": "oviAri4",
+      "ucsc_db": "oviAri4",
+      "source_url": "https://hgdownload.soe.ucsc.edu/goldenPath/oviAri4/database/chromAlias.txt.gz",
+      "source_format": "ucsc-chromAlias-table: alias<TAB>chrom<TAB>source",
+      "upstream_file": "upstream/oviAri4.chromAlias.txt.gz",
+      "sha256": "9a86923a8d397079c70a8cddb370ebb8dd77e7ac54df50142ae9db91fb6ea450",
+      "upstream_last_modified": "Tue, 02 Oct 2018 23:12:22 GMT",
+      "retrieved": "2026-10-02",
+      "registry_file": "data/oviAri4.tsv",
+      "label_corrections": [],
+      "catalog": {
+        "organism": "Sheep",
+        "common_name": "Sheep",
+        "scientific_name": "Ovis aries",
+        "tax_id": 9940,
+        "description": "Nov. 2015 (Oar_v4.0/oviAri4)",
+        "source_name": "International Sheep Genome Consortium"
+      },
+      "audit": {
+        "audit_date": "2026-10-02",
+        "audit_catalog_sha256": "f8da527c7a925f623569440cf7aedb39339ea874feed8d0db9666fba3889743f",
+        "status": "PASS",
+        "reason_codes": [
+          "PASS"
+        ],
+        "sequence_records": 5466,
+        "alias_rows": 10932
+      },
+      "canonical_id": "Oar_v4.0",
+      "canonical_id_basis": "ucsc-description-token"
+    },
+    {
+      "assembly_id": "ponAbe2",
+      "ucsc_db": "ponAbe2",
+      "source_url": "https://hgdownload.soe.ucsc.edu/goldenPath/ponAbe2/database/chromAlias.txt.gz",
+      "source_format": "ucsc-chromAlias-table: alias<TAB>chrom<TAB>source",
+      "upstream_file": "upstream/ponAbe2.chromAlias.txt.gz",
+      "sha256": "3b96b47790343fe83b4b28f43a124df2a8f11879d7f71c0152d490e65026c41d",
+      "upstream_last_modified": "Sun, 05 Aug 2018 16:00:57 GMT",
+      "retrieved": "2026-10-02",
+      "registry_file": "data/ponAbe2.tsv",
+      "label_corrections": [],
+      "catalog": {
+        "organism": "Orangutan",
+        "common_name": "Orangutan",
+        "scientific_name": "Pongo pygmaeus abelii",
+        "tax_id": 9601,
+        "description": "July 2007 (WUGSC 2.0.2/ponAbe2)",
+        "source_name": "WUSTL 3.0"
+      },
+      "audit": {
+        "audit_date": "2026-10-02",
+        "audit_catalog_sha256": "f8da527c7a925f623569440cf7aedb39339ea874feed8d0db9666fba3889743f",
+        "status": "PASS",
+        "reason_codes": [
+          "PASS"
+        ],
+        "sequence_records": 55,
+        "alias_rows": 55
+      },
+      "canonical_id": "ponAbe2",
+      "canonical_id_basis": "ucsc-db"
+    },
+    {
+      "assembly_id": "ponAbe3",
+      "ucsc_db": "ponAbe3",
+      "source_url": "https://hgdownload.soe.ucsc.edu/goldenPath/ponAbe3/database/chromAlias.txt.gz",
+      "source_format": "ucsc-chromAlias-table: alias<TAB>chrom<TAB>source",
+      "upstream_file": "upstream/ponAbe3.chromAlias.txt.gz",
+      "sha256": "762a13d417d9baeee068dd9efcb43471353fd9a0e122d55c1bae366401c00352",
+      "upstream_last_modified": "Fri, 02 Nov 2018 00:05:17 GMT",
+      "retrieved": "2026-10-02",
+      "registry_file": "data/ponAbe3.tsv",
+      "label_corrections": [],
+      "catalog": {
+        "organism": "Orangutan",
+        "common_name": "Orangutan",
+        "scientific_name": "Pongo pygmaeus abelii",
+        "tax_id": 9601,
+        "description": "Jan. 2018 (Susie_PABv2/ponAbe3)",
+        "source_name": "University of Washington"
+      },
+      "audit": {
+        "audit_date": "2026-10-02",
+        "audit_catalog_sha256": "f8da527c7a925f623569440cf7aedb39339ea874feed8d0db9666fba3889743f",
+        "status": "PASS",
+        "reason_codes": [
+          "PASS"
+        ],
+        "sequence_records": 5261,
+        "alias_rows": 10522
+      },
+      "canonical_id": "ponAbe3",
+      "canonical_id_basis": "ucsc-db"
+    },
+    {
+      "assembly_id": "rheMac10",
+      "ucsc_db": "rheMac10",
+      "source_url": "https://hgdownload.soe.ucsc.edu/goldenPath/rheMac10/database/chromAlias.txt.gz",
+      "source_format": "ucsc-chromAlias-table: alias<TAB>chrom<TAB>source",
+      "upstream_file": "upstream/rheMac10.chromAlias.txt.gz",
+      "sha256": "7745197f6dbe03ae9cc33f36943b72373082ff2663e91a5bb9e5dd82be374bd8",
+      "upstream_last_modified": "Tue, 03 Sep 2019 22:33:10 GMT",
+      "retrieved": "2026-10-02",
+      "registry_file": "data/rheMac10.tsv",
+      "label_corrections": [],
+      "catalog": {
+        "organism": "Rhesus",
+        "common_name": "Rhesus",
+        "scientific_name": "Macaca mulatta",
+        "tax_id": 9544,
+        "description": "Feb. 2019 (Mmul_10/rheMac10)",
+        "source_name": "The Genome Institute at Washington University School of Medicine"
+      },
+      "audit": {
+        "audit_date": "2026-10-02",
+        "audit_catalog_sha256": "f8da527c7a925f623569440cf7aedb39339ea874feed8d0db9666fba3889743f",
+        "status": "PASS",
+        "reason_codes": [
+          "PASS"
+        ],
+        "sequence_records": 2939,
+        "alias_rows": 5878
+      },
+      "canonical_id": "Mmul_10",
+      "canonical_id_basis": "ucsc-description-token"
+    },
+    {
+      "assembly_id": "rn5",
+      "ucsc_db": "rn5",
+      "source_url": "https://hgdownload.soe.ucsc.edu/goldenPath/rn5/database/chromAlias.txt.gz",
+      "source_format": "ucsc-chromAlias-table: alias<TAB>chrom<TAB>source",
+      "upstream_file": "upstream/rn5.chromAlias.txt.gz",
+      "sha256": "c05e93a12b463a140fbdf8ad025b2fc422ddaca9964aa5564bea3816362b6b1d",
+      "upstream_last_modified": "Fri, 16 Sep 2016 01:03:11 GMT",
+      "retrieved": "2026-10-02",
+      "registry_file": "data/rn5.tsv",
+      "label_corrections": [],
+      "catalog": {
+        "organism": "Rat",
+        "common_name": "Rat",
+        "scientific_name": "Rattus norvegicus",
+        "tax_id": 10116,
+        "description": "Mar. 2012 (RGSC 5.0/rn5)",
+        "source_name": "RGSC Rnor_5.0 (GCA_000001895.3)"
+      },
+      "audit": {
+        "audit_date": "2026-10-02",
+        "audit_catalog_sha256": "f8da527c7a925f623569440cf7aedb39339ea874feed8d0db9666fba3889743f",
+        "status": "PASS",
+        "reason_codes": [
+          "PASS"
+        ],
+        "sequence_records": 155,
+        "alias_rows": 155
+      },
+      "canonical_id": "rn5",
+      "canonical_id_basis": "ucsc-db"
+    },
+    {
+      "assembly_id": "sacCer3",
+      "ucsc_db": "sacCer3",
+      "source_url": "https://hgdownload.soe.ucsc.edu/goldenPath/sacCer3/database/chromAlias.txt.gz",
+      "source_format": "ucsc-chromAlias-table: alias<TAB>chrom<TAB>source",
+      "upstream_file": "upstream/sacCer3.chromAlias.txt.gz",
+      "sha256": "eec7fd8e2c9ebd91a5db61d19c71e15d56f0508c3b7798734fb3ee848bb72b80",
+      "upstream_last_modified": "Sun, 05 Aug 2018 16:15:12 GMT",
+      "retrieved": "2026-10-02",
+      "registry_file": "data/sacCer3.tsv",
+      "label_corrections": [],
+      "catalog": {
+        "organism": "S. cerevisiae",
+        "common_name": "S. cerevisiae",
+        "scientific_name": "Saccharomyces cerevisiae",
+        "tax_id": 559292,
+        "description": "Apr. 2011 (SacCer_Apr2011/sacCer3)",
+        "source_name": "Saccharomyces cerevisiae S288c assembly from Saccharomyces Genome Database (GCA_000146045.2)"
+      },
+      "audit": {
+        "audit_date": "2026-10-02",
+        "audit_catalog_sha256": "f8da527c7a925f623569440cf7aedb39339ea874feed8d0db9666fba3889743f",
+        "status": "PASS",
+        "reason_codes": [
+          "PASS"
+        ],
+        "sequence_records": 17,
+        "alias_rows": 51
+      },
+      "canonical_id": "sacCer3",
+      "canonical_id_basis": "ucsc-db"
+    },
+    {
+      "assembly_id": "saiBol1",
+      "ucsc_db": "saiBol1",
+      "source_url": "https://hgdownload.soe.ucsc.edu/goldenPath/saiBol1/database/chromAlias.txt.gz",
+      "source_format": "ucsc-chromAlias-table: alias<TAB>chrom<TAB>source",
+      "upstream_file": "upstream/saiBol1.chromAlias.txt.gz",
+      "sha256": "49171df519da35641b04c681349778af8099d628ccc65d9dbe1f136bc0900859",
+      "upstream_last_modified": "Sun, 04 Feb 2018 17:21:56 GMT",
+      "retrieved": "2026-10-02",
+      "registry_file": "data/saiBol1.tsv",
+      "label_corrections": [],
+      "catalog": {
+        "organism": "Squirrel monkey",
+        "common_name": "Squirrel monkey",
+        "scientific_name": "Saimiri boliviensis",
+        "tax_id": 39432,
+        "description": "Oct. 2011 (Broad/saiBol1)",
+        "source_name": "Broad SaiBol1.0 (GCA_000235385.1)"
+      },
+      "audit": {
+        "audit_date": "2026-10-02",
+        "audit_catalog_sha256": "f8da527c7a925f623569440cf7aedb39339ea874feed8d0db9666fba3889743f",
+        "status": "PASS",
+        "reason_codes": [
+          "PASS"
+        ],
+        "sequence_records": 2685,
+        "alias_rows": 5370
+      },
+      "canonical_id": "saiBol1",
+      "canonical_id_basis": "ucsc-db"
+    },
+    {
+      "assembly_id": "susScr11",
+      "ucsc_db": "susScr11",
+      "source_url": "https://hgdownload.soe.ucsc.edu/goldenPath/susScr11/database/chromAlias.txt.gz",
+      "source_format": "ucsc-chromAlias-table: alias<TAB>chrom<TAB>source",
+      "upstream_file": "upstream/susScr11.chromAlias.txt.gz",
+      "sha256": "0f75d2370cc1d6df26134e5119a7d68655b582ec27783638e76f7487cef3778d",
+      "upstream_last_modified": "Fri, 10 Nov 2017 01:49:21 GMT",
+      "retrieved": "2026-10-02",
+      "registry_file": "data/susScr11.tsv",
+      "label_corrections": [],
+      "catalog": {
+        "organism": "Pig",
+        "common_name": "Pig",
+        "scientific_name": "Sus scrofa",
+        "tax_id": 9823,
+        "description": "Feb. 2017 (Sscrofa11.1/susScr11)",
+        "source_name": "The Swine Genome Sequencing Consortium (SGSC)"
+      },
+      "audit": {
+        "audit_date": "2026-10-02",
+        "audit_catalog_sha256": "f8da527c7a925f623569440cf7aedb39339ea874feed8d0db9666fba3889743f",
+        "status": "PASS",
+        "reason_codes": [
+          "PASS"
+        ],
+        "sequence_records": 613,
+        "alias_rows": 1247
+      },
+      "canonical_id": "Sscrofa11.1",
+      "canonical_id_basis": "ucsc-description-token"
+    },
+    {
+      "assembly_id": "susScr3",
+      "ucsc_db": "susScr3",
+      "source_url": "https://hgdownload.soe.ucsc.edu/goldenPath/susScr3/database/chromAlias.txt.gz",
+      "source_format": "ucsc-chromAlias-table: alias<TAB>chrom<TAB>source",
+      "upstream_file": "upstream/susScr3.chromAlias.txt.gz",
+      "sha256": "9b4ce797a8ec10e0c0e5bd7ac17a6d794eb1acd524d7547b3687283d58c44ba7",
+      "upstream_last_modified": "Sun, 18 Feb 2018 16:48:09 GMT",
+      "retrieved": "2026-10-02",
+      "registry_file": "data/susScr3.tsv",
+      "label_corrections": [],
+      "catalog": {
+        "organism": "Pig",
+        "common_name": "Pig",
+        "scientific_name": "Sus scrofa",
+        "tax_id": 9823,
+        "description": "Aug. 2011 (SGSC Sscrofa10.2/susScr3)",
+        "source_name": "SGSC Sscrofa10.2 (NCBI project 13421, GCA_000003025.4, WGS AEMK01)"
+      },
+      "audit": {
+        "audit_date": "2026-10-02",
+        "audit_catalog_sha256": "f8da527c7a925f623569440cf7aedb39339ea874feed8d0db9666fba3889743f",
+        "status": "PASS",
+        "reason_codes": [
+          "PASS"
+        ],
+        "sequence_records": 4583,
+        "alias_rows": 9186
+      },
+      "canonical_id": "susScr3",
+      "canonical_id_basis": "ucsc-db"
+    },
+    {
+      "assembly_id": "taeGut1",
+      "ucsc_db": "taeGut1",
+      "source_url": "https://hgdownload.soe.ucsc.edu/goldenPath/taeGut1/database/chromAlias.txt.gz",
+      "source_format": "ucsc-chromAlias-table: alias<TAB>chrom<TAB>source",
+      "upstream_file": "upstream/taeGut1.chromAlias.txt.gz",
+      "sha256": "407c783b2b36cf0dcf810f1f0ea9de0b95106a8f7d0364132bee9c64309b916a",
+      "upstream_last_modified": "Sun, 05 Aug 2018 16:30:54 GMT",
+      "retrieved": "2026-10-02",
+      "registry_file": "data/taeGut1.tsv",
+      "label_corrections": [],
+      "catalog": {
+        "organism": "Zebra finch",
+        "common_name": "Zebra finch",
+        "scientific_name": "Taeniopygia guttata",
+        "tax_id": 59729,
+        "description": "Jul. 2008 (WUGSC 3.2.4/taeGut1)",
+        "source_name": "Washington University taeGut1"
+      },
+      "audit": {
+        "audit_date": "2026-10-02",
+        "audit_catalog_sha256": "f8da527c7a925f623569440cf7aedb39339ea874feed8d0db9666fba3889743f",
+        "status": "PASS",
+        "reason_codes": [
+          "PASS"
+        ],
+        "sequence_records": 70,
+        "alias_rows": 70
+      },
+      "canonical_id": "taeGut1",
+      "canonical_id_basis": "ucsc-db"
+    },
+    {
+      "assembly_id": "tetNig2",
+      "ucsc_db": "tetNig2",
+      "source_url": "https://hgdownload.soe.ucsc.edu/goldenPath/tetNig2/database/chromAlias.txt.gz",
+      "source_format": "ucsc-chromAlias-table: alias<TAB>chrom<TAB>source",
+      "upstream_file": "upstream/tetNig2.chromAlias.txt.gz",
+      "sha256": "9041c49a66f13614ab59c8ae9644dec3dc9d90bf402931138e1fcc2c1aed85d4",
+      "upstream_last_modified": "Sun, 05 Aug 2018 16:35:20 GMT",
+      "retrieved": "2026-10-02",
+      "registry_file": "data/tetNig2.tsv",
+      "label_corrections": [],
+      "catalog": {
+        "organism": "Tetraodon",
+        "common_name": "Tetraodon",
+        "scientific_name": "Tetraodon nigroviridis",
+        "tax_id": 99883,
+        "description": "Mar. 2007 (Genoscope 8.0/tetNig2)",
+        "source_name": "Genoscope Tetraodon v8.0 (NCBI project 12350, CAAE01000000)"
+      },
+      "audit": {
+        "audit_date": "2026-10-02",
+        "audit_catalog_sha256": "f8da527c7a925f623569440cf7aedb39339ea874feed8d0db9666fba3889743f",
+        "status": "PASS",
+        "reason_codes": [
+          "PASS"
+        ],
+        "sequence_records": 27,
+        "alias_rows": 27
+      },
+      "canonical_id": "tetNig2",
+      "canonical_id_basis": "ucsc-db"
+    },
+    {
+      "assembly_id": "triMan1",
+      "ucsc_db": "triMan1",
+      "source_url": "https://hgdownload.soe.ucsc.edu/goldenPath/triMan1/database/chromAlias.txt.gz",
+      "source_format": "ucsc-chromAlias-table: alias<TAB>chrom<TAB>source",
+      "upstream_file": "upstream/triMan1.chromAlias.txt.gz",
+      "sha256": "6c7f2ba0249f3926eae8c98e697da6f43e1fdc8ed2c51c1f9fc6021f50202474",
+      "upstream_last_modified": "Sun, 18 Feb 2018 16:54:23 GMT",
+      "retrieved": "2026-10-02",
+      "registry_file": "data/triMan1.tsv",
+      "label_corrections": [],
+      "catalog": {
+        "organism": "Manatee",
+        "common_name": "Manatee",
+        "scientific_name": "Trichechus manatus latirostris",
+        "tax_id": 127582,
+        "description": "Oct. 2011 (Broad v1.0/triMan1)",
+        "source_name": "Broad Institute of MIT and Harvard TriManLat1.0 (GCA_000243295.1)"
+      },
+      "audit": {
+        "audit_date": "2026-10-02",
+        "audit_catalog_sha256": "f8da527c7a925f623569440cf7aedb39339ea874feed8d0db9666fba3889743f",
+        "status": "PASS",
+        "reason_codes": [
+          "PASS"
+        ],
+        "sequence_records": 6323,
+        "alias_rows": 12645
+      },
+      "canonical_id": "triMan1",
+      "canonical_id_basis": "ucsc-db"
+    },
+    {
+      "assembly_id": "wuhCor1",
+      "ucsc_db": "wuhCor1",
+      "source_url": "https://hgdownload.soe.ucsc.edu/goldenPath/wuhCor1/database/chromAlias.txt.gz",
+      "source_format": "ucsc-chromAlias-table: alias<TAB>chrom<TAB>source",
+      "upstream_file": "upstream/wuhCor1.chromAlias.txt.gz",
+      "sha256": "d8568f79dc9e23d95b6c029a159312711ba1ffbd32ddce20e7a4d5ab2b3afb5d",
+      "upstream_last_modified": "Wed, 29 Jan 2020 19:54:25 GMT",
+      "retrieved": "2026-10-02",
+      "registry_file": "data/wuhCor1.tsv",
+      "label_corrections": [],
+      "catalog": {
+        "organism": "SARS-CoV-2",
+        "common_name": "SARS-CoV-2",
+        "scientific_name": "SARS-CoV-2",
+        "tax_id": 2697049,
+        "description": "Jan. 2020 (NC_045512.2)",
+        "source_name": "SARS-CoV-2"
+      },
+      "audit": {
+        "audit_date": "2026-10-02",
+        "audit_catalog_sha256": "f8da527c7a925f623569440cf7aedb39339ea874feed8d0db9666fba3889743f",
+        "status": "PASS",
+        "reason_codes": [
+          "PASS"
+        ],
+        "sequence_records": 1,
+        "alias_rows": 2
+      },
+      "canonical_id": "wuhCor1",
+      "canonical_id_basis": "ucsc-db"
+    },
+    {
+      "assembly_id": "xenTro10",
+      "ucsc_db": "xenTro10",
+      "source_url": "https://hgdownload.soe.ucsc.edu/goldenPath/xenTro10/database/chromAlias.txt.gz",
+      "source_format": "ucsc-chromAlias-table: alias<TAB>chrom<TAB>source",
+      "upstream_file": "upstream/xenTro10.chromAlias.txt.gz",
+      "sha256": "7b3a42e629ede806d530fca9710fd2b4c840708e3a045512c9c439088297e27e",
+      "upstream_last_modified": "Mon, 22 Feb 2021 21:19:24 GMT",
+      "retrieved": "2026-10-02",
+      "registry_file": "data/xenTro10.tsv",
+      "label_corrections": [],
+      "catalog": {
+        "organism": "X. tropicalis",
+        "common_name": "X. tropicalis",
+        "scientific_name": "Xenopus tropicalis",
+        "tax_id": 8364,
+        "description": "Nov. 2019 (UCB_Xtro_10.0/xenTro10)",
+        "source_name": "University of California, Berkeley"
+      },
+      "audit": {
+        "audit_date": "2026-10-02",
+        "audit_catalog_sha256": "f8da527c7a925f623569440cf7aedb39339ea874feed8d0db9666fba3889743f",
+        "status": "PASS",
+        "reason_codes": [
+          "PASS"
+        ],
+        "sequence_records": 167,
+        "alias_rows": 501
+      },
+      "canonical_id": "xenTro10",
+      "canonical_id_basis": "ucsc-db"
+    },
+    {
+      "assembly_id": "xenTro7",
+      "ucsc_db": "xenTro7",
+      "source_url": "https://hgdownload.soe.ucsc.edu/goldenPath/xenTro7/database/chromAlias.txt.gz",
+      "source_format": "ucsc-chromAlias-table: alias<TAB>chrom<TAB>source",
+      "upstream_file": "upstream/xenTro7.chromAlias.txt.gz",
+      "sha256": "0a629a907c2d7f62dac853e5a3ad9bb2afa9696b2096a2cc5e6ce71d10526b31",
+      "upstream_last_modified": "Sun, 18 Feb 2018 17:00:16 GMT",
+      "retrieved": "2026-10-02",
+      "registry_file": "data/xenTro7.tsv",
+      "label_corrections": [],
+      "catalog": {
+        "organism": "X. tropicalis",
+        "common_name": "X. tropicalis",
+        "scientific_name": "Xenopus tropicalis",
+        "tax_id": 8364,
+        "description": "Sep. 2012 (JGI 7.0/xenTro7)",
+        "source_name": "US DOE Joint Genome Institute (JGI-PGF)"
+      },
+      "audit": {
+        "audit_date": "2026-10-02",
+        "audit_catalog_sha256": "f8da527c7a925f623569440cf7aedb39339ea874feed8d0db9666fba3889743f",
+        "status": "PASS",
+        "reason_codes": [
+          "PASS"
+        ],
+        "sequence_records": 7728,
+        "alias_rows": 15455
+      },
+      "canonical_id": "xenTro7",
+      "canonical_id_basis": "ucsc-db"
+    }
+  ]
+}

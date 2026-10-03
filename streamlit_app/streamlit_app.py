@@ -31,7 +31,7 @@ import streamlit as st
 
 from streamlit_app.config import Settings
 from streamlit_app.core import (
-    ChromosomeMapper,
+    CanonicalSchemaError,
     CustomParser,
     FormatDetector,
     canonicalize_annotation_result,
@@ -39,8 +39,17 @@ from streamlit_app.core import (
     extension_authoritative_for,
     normalize_intervals,
     parse_and_normalize,
-    CanonicalSchemaError,
 )
+from streamlit_app.core.chrom_registry import (
+    DEFAULT_MAX_BYTES,
+    DEFAULT_MAX_ROWS,
+    CustomRegistryError,
+    assembly_options,
+    describe_issue,
+    load_catalog,
+    resolve_registry_source,
+)
+from streamlit_app.core.chromosome_inputs import normalize_input_chromosomes
 from streamlit_app.core.engine_registry import (
     DEFAULT_ENGINE,
     ENGINE_OPTIONS,
@@ -49,6 +58,11 @@ from streamlit_app.core.engine_registry import (
     engine_available,
     engine_label,
     unavailable_message,
+)
+from streamlit_app.core.vcf_contigs import (
+    ChromosomeContigCollisionError,
+    header_contig_renames,
+    reconcile_contig_lines,
 )
 from streamlit_app.utils import (
     DataValidator,
@@ -105,6 +119,7 @@ _RESULT_STATE_KEYS = (
     "result_coord_format",
     "result_vcf_header_lines",
     "result_vcf_contig_renames",
+    "result_chr_normalization",
 )
 
 _COORD_SYSTEM_OPTIONS = [
@@ -113,11 +128,51 @@ _COORD_SYSTEM_OPTIONS = [
     "1-based (GFF/GTF/VCF)",
 ]
 
-_CHR_STYLES = [
-    "UCSC (chr1, chr2, ...)",
-    "Ensembl (1, 2, ...)",
-    "Keep original",
-]
+# Genome assemblies offered for chromosome-name normalization: display
+# label -> assembly id, read from the bundled catalog metadata (UCSC values,
+# unique labels, fixed presentation order). Nothing is inferred from a label
+# or from the input files, and no registry is loaded to build the list.
+_ASSEMBLY_PLACEHOLDER = "Select genome assembly"
+_ASSEMBLY_OPTIONS = assembly_options()
+_ASSEMBLY_LABELS = {v: k for k, v in _ASSEMBLY_OPTIONS.items()}
+_ASSEMBLY_INFO = {info.canonical_id: info for info in load_catalog()}
+
+# The one alternative to a bundled assembly: the user's own chromosome
+# mapping. It is a source of chromosome identity, not an assembly.
+_CUSTOM_OPTION = "Custom chromosome mapping\u2026"
+_CUSTOM_MAPPING_HELP = (
+    "One row per sequence; the columns are alternative naming systems "
+    "(tab-separated, header `assembly ucsc ensembl genbank refseq`). Empty "
+    "cells are allowed, but each row needs at least one name. Names are "
+    "matched exactly, including capitals. AnnotateR checks that the file is "
+    "structurally unambiguous; it does not verify that the names are "
+    "biologically correct. Limits: "
+    f"{DEFAULT_MAX_ROWS:,} sequences, {DEFAULT_MAX_BYTES // 2**20} MiB."
+)
+_MAPPING_REQUIRED_MESSAGE = (
+    "Upload a chromosome mapping file before normalizing chromosome names."
+)
+_MAPPING_INVALID_MESSAGE = (
+    "The chromosome mapping file is not valid, so chromosome names cannot "
+    "be normalized. Correct the file and upload it again."
+)
+_MAPPING_LOADED_KEY = "chr_mapping_loaded"
+
+# Chromosome naming choices: display label -> naming system (None = keep
+# the names exactly as provided).
+_NAMING_OPTIONS = {
+    "Keep original names": None,
+    "UCSC names": "ucsc",
+    "Ensembl names": "ensembl",
+    "NCBI RefSeq accessions": "refseq",
+    "GenBank accessions": "genbank",
+    "Assembly names": "assembly",
+}
+_NAMING_LABELS = {v: k for k, v in _NAMING_OPTIONS.items()}
+
+_ASSEMBLY_REQUIRED_MESSAGE = (
+    "Select the genome assembly before normalizing chromosome names."
+)
 
 _FEATURE_TYPE_OPTIONS = [
     "gene", "transcript", "exon", "CDS", "5' UTR", "3' UTR",
@@ -192,34 +247,71 @@ def _file_identity(uploaded):
     return (uploaded.name, uploaded.size, digest)
 
 
-def _target_style_key(option: str):
-    """Map the manual chromosome-style selector to a mapper style key."""
-    if option is None:
-        return None
-    if option.startswith("UCSC"):
-        return "ucsc"
-    if option.startswith("Ensembl"):
-        return "ensembl"
-    return None  # "Keep original"
-
-
-def _chrom_renames(before, after) -> dict:
-    """
-    Exact ``old -> new`` chromosome identifiers changed by standardization,
-    from the row-aligned chromosome column before and after conversion.
-    Unchanged identifiers are omitted, so no rename means an empty dict.
-    """
-    return {
-        str(old): str(new)
-        for old, new in zip(before, after)
-        if str(old) != str(new)
-    }
-
-
 def _clear_results_state():
     """Explicit invalidation of stored results (Task 7, state safety)."""
     for key in _RESULT_STATE_KEYS:
         st.session_state.pop(key, None)
+
+
+def _chr_source_identity(cfg: dict):
+    if cfg["chr_custom"]:
+        return ("custom", cfg["chr_mapping_digest"])
+    return ("assembly", cfg["chr_assembly"])
+
+
+def _custom_registry(data: bytes, digest: str):
+    """``(registry, error)`` of a custom mapping, parsed once per content.
+
+    The outcome lives in this session's state only (never a global cache,
+    never on disk) and is dropped as soon as the mapping is not in use.
+    """
+    cached = st.session_state.get(_MAPPING_LOADED_KEY)
+    if cached is not None and cached[0] == digest:
+        return cached[1], cached[2]
+    try:
+        registry, error = resolve_registry_source(mapping=data), None
+    except CustomRegistryError as exc:
+        registry, error = None, exc
+    st.session_state[_MAPPING_LOADED_KEY] = (digest, registry, error)
+    return registry, error
+
+
+def _mapping_loaded_caption(registry) -> str:
+    n = len(registry)
+    return f"Loaded {n:,} sequence mapping{'' if n == 1 else 's'}"
+
+
+def _show_mapping_error(error: CustomRegistryError):
+    """Plain-text validation report; file content is never rendered as
+    markdown or HTML."""
+    st.error(_MAPPING_INVALID_MESSAGE)
+    # describe_issue bounds each line (value previews, listed places).
+    lines = [describe_issue(issue) for issue in error.issues]
+    if error.more:
+        lines.append(f"... and {error.more} more problem(s)")
+    st.code("\n".join(lines), language=None, wrap_lines=True)
+
+
+def _registry_for_run(cfg: dict):
+    """The one registry the run normalizes with, or ``None`` after showing
+    why the run cannot proceed. This is the only place where a bundled
+    assembly and a custom mapping differ; everything after it takes a
+    ``ChromosomeRegistry``."""
+    if cfg["chr_custom"]:
+        if cfg["chr_mapping"] is None:
+            st.error(_MAPPING_REQUIRED_MESSAGE)
+            return None
+        registry, error = _custom_registry(
+            cfg["chr_mapping"], cfg["chr_mapping_digest"])
+        if error is not None:
+            # The problems themselves are listed beside the upload.
+            st.error(_MAPPING_INVALID_MESSAGE)
+            return None
+        return registry
+    if cfg["chr_assembly"] is None:
+        st.error(_ASSEMBLY_REQUIRED_MESSAGE)
+        return None
+    return resolve_registry_source(assembly=cfg["chr_assembly"])
 
 
 def _config_signature(cfg: dict, coord_identity, annot_identity, coord_format):
@@ -227,7 +319,8 @@ def _config_signature(cfg: dict, coord_identity, annot_identity, coord_format):
     Signature of every semantics-affecting input of one run.
 
     Any change — engine, mode, inputs, join-relevant options, min_overlap,
-    strand, coordinate systems, chromosome handling, feature filter, or
+    strand, coordinate systems, chromosome naming (and the genome assembly
+    it is normalized under), feature filter, or
     file/mapping identity — changes the signature, so stored results can
     never be displayed as if they belonged to the new configuration.
     """
@@ -239,8 +332,11 @@ def _config_signature(cfg: dict, coord_identity, annot_identity, coord_format):
         cfg["min_overlap"] if cfg["mode"] == "overlap" else None,
         cfg["coord_system"],
         cfg["annot_system"],
-        cfg["chr_handling"],
-        cfg["target_chr_style"],
+        cfg["chr_naming"],
+        # The chromosome source only matters when names are actually
+        # normalized. A custom mapping is identified by its content, never
+        # by its file name.
+        _chr_source_identity(cfg) if cfg["chr_naming"] else None,
         tuple(cfg["feature_types"]),
         coord_identity,
         annot_identity,
@@ -477,23 +573,67 @@ def render_sidebar() -> dict:
                 "declares it (default: 0-based half-open)."
             ),
         )
-        chr_handling = st.radio(
-            "Chromosome ID handling",
-            ["Auto-convert if needed", "Manual specification"],
-            key="chr_handling",
+        chr_assembly_label = st.selectbox(
+            "Genome assembly",
+            [_ASSEMBLY_PLACEHOLDER, _CUSTOM_OPTION, *_ASSEMBLY_OPTIONS],
+            key="chr_assembly",
             help=(
-                "Auto-convert standardizes chromosome IDs when the two "
-                "files use different naming styles."
+                "Chromosome names can refer to different sequences in "
+                "different genome assemblies. Select the assembly used by "
+                "your input files so AnnotateR can normalize names safely. "
+                "Click the list and type to search by species, assembly or "
+                "UCSC name (for example human, mm10, canFam3). Choose "
+                "\u201cCustom chromosome mapping\u2026\u201d to supply your "
+                "own table of sequence names instead. Not needed when "
+                "names are kept as they are."
             ),
         )
-        target_chr_style = None
-        if chr_handling == "Manual specification":
-            target_chr_style = st.selectbox(
-                "Target style",
-                _CHR_STYLES,
-                key="target_chr_style",
-                help="Convert both files' chromosome IDs to this style",
+        chr_custom = chr_assembly_label == _CUSTOM_OPTION
+        chr_mapping = None
+        if chr_custom:
+            uploaded_mapping = st.file_uploader(
+                "Chromosome mapping file",
+                type=["tsv"],
+                key="chr_mapping_file",
+                help=_CUSTOM_MAPPING_HELP,
             )
+            if uploaded_mapping is not None:
+                chr_mapping = uploaded_mapping.getvalue()
+        chr_naming_label = st.selectbox(
+            "Chromosome naming",
+            list(_NAMING_OPTIONS),
+            key="chr_naming",
+            help=(
+                "This changes chromosome identifiers only. Coordinates and "
+                "genome assembly are not changed."
+            ),
+        )
+        chr_assembly = _ASSEMBLY_OPTIONS.get(chr_assembly_label)
+        chr_mapping_digest = (
+            hashlib.sha256(chr_mapping).hexdigest()
+            if chr_mapping is not None else None)
+        if chr_assembly is not None:
+            info = _ASSEMBLY_INFO[chr_assembly]
+            st.caption(" \u00b7 ".join(
+                part for part in (info.scientific_name,
+                                  f"UCSC {info.ucsc_db}") if part))
+        chr_naming = _NAMING_OPTIONS[chr_naming_label]
+        if chr_naming is not None and chr_custom:
+            if chr_mapping is None:
+                st.warning(_MAPPING_REQUIRED_MESSAGE)
+            else:
+                # Parsed only because names will be normalized, and once
+                # per distinct content (session-scoped, see below).
+                mapping_registry, mapping_error = _custom_registry(
+                    chr_mapping, chr_mapping_digest)
+                if mapping_error is not None:
+                    _show_mapping_error(mapping_error)
+                else:
+                    st.caption(_mapping_loaded_caption(mapping_registry))
+        elif chr_naming is not None and chr_assembly is None:
+            st.warning(_ASSEMBLY_REQUIRED_MESSAGE)
+        if not (chr_custom and chr_naming is not None):
+            st.session_state.pop(_MAPPING_LOADED_KEY, None)
 
         # --- Advanced options (collapsed by default) -----------------
         # The strand checkbox applies to all operation modes and a nonzero
@@ -551,8 +691,11 @@ def render_sidebar() -> dict:
         "engine": engine_key,
         "coord_system": coord_system,
         "annot_system": annot_system,
-        "chr_handling": chr_handling,
-        "target_chr_style": target_chr_style,
+        "chr_assembly": chr_assembly,
+        "chr_custom": chr_custom,
+        "chr_mapping": chr_mapping,
+        "chr_mapping_digest": chr_mapping_digest,
+        "chr_naming": chr_naming,
         "mode": mode,
         "join": join,
         "use_strand": use_strand,
@@ -782,60 +925,47 @@ def run_annotation(cfg: dict, coord_df, annot_info, signature):
             f"features (feature filter)."
         )
 
-    # --- Chromosome ID compatibility ---
-    mapper = ChromosomeMapper()
-    query_chr_before = coord_df["chr"]
-    mismatch_info = mapper.find_mismatches(
-        coord_df["chr"].unique().tolist(),
-        annot_df["chr"].unique().tolist(),
-    )
-    if not mismatch_info["styles_match"]:
-        suggestion = mapper.get_conversion_suggestion(mismatch_info)
-        if cfg["chr_handling"] == "Auto-convert if needed":
-            if mismatch_info["can_auto_convert"]:
-                target_style = "ucsc"
-                st.info(f"Standardizing chromosome IDs to {target_style} style...")
-                coord_df, _, _ = mapper.standardize_dataframe(coord_df, "chr", target_style)
-                annot_df, _, _ = mapper.standardize_dataframe(annot_df, "chr", target_style)
-                st.caption("Chromosome IDs standardized.")
-            else:
-                st.warning(suggestion)
-        else:
-            target = _target_style_key(cfg["target_chr_style"])
-            if target:
-                coord_df, coord_src, _ = mapper.standardize_dataframe(
-                    coord_df, "chr", target
-                )
-                annot_df, annot_src, _ = mapper.standardize_dataframe(
-                    annot_df, "chr", target
-                )
-                # Claim standardization only when the converter actually
-                # maps identifiers (currently UCSC <-> Ensembl only);
-                # NCBI-style and unknown identifiers are left unchanged.
-                if any(
-                    mapper.conversion_supported(src, target)
-                    for src in (coord_src, annot_src)
-                ):
-                    st.info(
-                        f"Chromosome IDs standardized to {target} style "
-                        "(manual specification)."
-                    )
-                else:
-                    st.warning(
-                        f"Chromosome IDs cannot be converted to {target} "
-                        "style (only UCSC <-> Ensembl identifiers are "
-                        "mappable); identifiers were left unchanged."
-                    )
-            else:
-                st.warning(
-                    "Chromosome ID styles differ and 'Keep original' is selected; "
-                    "rows on differently-named chromosomes will not match."
-                )
-
-    # Provenance for the VCF export: which query identifiers the
-    # standardization above actually renamed (exact old -> new pairs
-    # taken from the converter's own output, never re-derived).
-    contig_renames = _chrom_renames(query_chr_before, coord_df["chr"])
+    # --- Chromosome naming ---
+    # "Keep original names" is a true no-op (no assembly needed). Any
+    # normalization requires an explicitly selected assembly; nothing is
+    # inferred from the files.
+    chr_summary = None
+    contig_renames = {}
+    if cfg["chr_naming"] is not None:
+        registry = _registry_for_run(cfg)
+        if registry is None:
+            return
+        normalized = normalize_input_chromosomes(
+            coord_df, annot_df, registry=registry, target=cfg["chr_naming"],
+        )
+        coord_df, annot_df = normalized.coord_df, normalized.annot_df
+        # Renames come from the normalization report, never re-derived.
+        contig_renames = dict(normalized.coord_renames)
+        # Header ##contig declarations are normalized through the same
+        # registry and target, also for contigs no row uses. Row-derived
+        # renames are the same registry's answer, so they agree.
+        coord_parse = st.session_state.get("coord_parse")
+        header_lines = (coord_parse.get("vcf_header_lines")
+                        if isinstance(coord_parse, dict) else None)
+        if header_lines:
+            contig_renames = {
+                **header_contig_renames(
+                    header_lines, registry, cfg["chr_naming"]),
+                **contig_renames,
+            }
+        chr_summary = {
+            # The genome assembly's label for a bundled registry; None for
+            # a custom mapping, which has no assembly identity.
+            "assembly_label": (
+                _ASSEMBLY_LABELS[registry.assembly_id]
+                if registry.assembly_id is not None else None),
+            "source_label": (
+                _ASSEMBLY_LABELS[registry.assembly_id]
+                if registry.assembly_id is not None else registry.name),
+            "naming_label": _NAMING_LABELS[cfg["chr_naming"]],
+            "coord_report": normalized.coord_report,
+            "annot_report": normalized.annot_report,
+        }
 
     # --- No-shared-identifiers warning ---
     # Whatever the conversion outcome, if the two tables share no
@@ -846,8 +976,9 @@ def run_annotation(cfg: dict, coord_df, annot_info, signature):
         if not shared:
             st.warning(
                 "No shared chromosome identifiers remain between query and "
-                "annotation data. Check the chromosome naming conventions "
-                "used by each file."
+                "annotation data. Select the genome assembly and a "
+                "chromosome naming above to normalize names, or check the "
+                "names used by each file."
             )
 
     # --- Engine selection (execution only; explicit failure, no fallback) ---
@@ -912,9 +1043,12 @@ def run_annotation(cfg: dict, coord_df, annot_info, signature):
             # Original VCF ## metadata (once per source file), restored
             # verbatim by the annotated VCF export.
             "result_vcf_header_lines": vcf_header_lines,
-            # Query chromosome identifiers renamed by standardization
+            # Query chromosome identifiers renamed by normalization
             # (old -> new); reconciles ##contig lines in the VCF export.
             "result_vcf_contig_renames": contig_renames,
+            # Chromosome-normalization summary shown with the results
+            # (None when names were kept as provided).
+            "result_chr_normalization": chr_summary,
         }
     )
 
@@ -949,6 +1083,8 @@ def render_results_section(cfg: dict, coord_identity, annot_identity, coord_form
     coord_format = st.session_state["result_coord_format"]
     vcf_header_lines = st.session_state.get("result_vcf_header_lines")
     vcf_contig_renames = st.session_state.get("result_vcf_contig_renames")
+
+    _render_chromosome_report(st.session_state.get("result_chr_normalization"))
 
     if result_df.empty:
         how = st.session_state.get("result_join", "left")
@@ -1009,6 +1145,93 @@ def render_results_section(cfg: dict, coord_identity, annot_identity, coord_form
     if not display_df.empty:
         with st.expander("Charts and gene list"):
             _render_charts_and_gene_list(display_df)
+
+
+_DETAIL_LIMIT = 20
+
+
+def _table_summary(label: str, report) -> str:
+    """One plain-language line per input table."""
+    return (
+        f"{label}: {report.resolved_changed_identifiers} names normalized, "
+        f"{report.resolved_unchanged_identifiers} already in this naming, "
+        f"{report.unresolved_identifiers} not normalized."
+    )
+
+
+def _show_identifiers(lines) -> None:
+    """Chromosome identifiers exactly as written. They come from the user's
+    files, so they go in a plain-text block, never through Markdown or HTML
+    (``HLA-A*01:01:01:01`` must not turn into emphasis)."""
+    lines = list(lines)
+    shown = lines[:_DETAIL_LIMIT]
+    if len(lines) > _DETAIL_LIMIT:
+        shown.append(f"... and {len(lines) - _DETAIL_LIMIT:,} more")
+    st.code("\n".join(shown), language=None, wrap_lines=True)
+
+
+def _count_lines(counts):
+    return [f"{name} ({n:,} rows)" for name, n in counts.items()]
+
+
+def _render_chromosome_report(summary):
+    """Show what chromosome normalization did, honestly and briefly."""
+    if summary is None:
+        st.caption("Chromosome names were kept as provided.")
+        return
+    tables = (("Query", summary["coord_report"]),
+              ("Annotation", summary["annot_report"]))
+    if summary["assembly_label"] is not None:
+        st.caption(
+            f"Chromosome naming: {summary['naming_label']} \u00b7 Genome "
+            f"assembly: {summary['assembly_label']}. Coordinates and genome "
+            "assembly are unchanged."
+        )
+    else:
+        st.caption(
+            f"Chromosome naming: {summary['naming_label']} \u00b7 "
+            f"{summary['source_label']}. Coordinates are unchanged."
+        )
+    for label, report in tables:
+        st.caption(_table_summary(label, report))
+    unresolved = any(r.unresolved_identifiers for _, r in tables)
+    merged = any(r.collapses for _, r in tables)
+    if unresolved:
+        st.warning(
+            "Some chromosome names could not be normalized and were left "
+            "as provided. See the details below."
+        )
+    if merged:
+        st.info(
+            "Some input chromosome names were normalized to the same "
+            "output name. See the details below."
+        )
+    if not (unresolved or merged):
+        return
+    with st.expander("Chromosome normalization details"):
+        for label, report in tables:
+            if not (report.unresolved_identifiers or report.collapses):
+                continue
+            st.markdown(f"**{label}**")
+            if report.unknown:
+                st.markdown(
+                    f"Not recognized in {summary['source_label']}:")
+                _show_identifiers(_count_lines(report.unknown))
+            if report.no_alias_for_target:
+                st.markdown(
+                    "Recognized, but no verified name is available in "
+                    f"{summary['naming_label']}:"
+                )
+                _show_identifiers(_count_lines(report.no_alias_for_target))
+            if report.collapses:
+                st.markdown(
+                    "Multiple input chromosome names were normalized to the "
+                    "same output name:"
+                )
+                _show_identifiers(
+                    f"{', '.join(sources)} \u2192 {output}"
+                    for output, sources in report.collapses.items())
+
 
 
 def _render_summary_metrics(result_df, coord_df, engine_name, mode, join):
@@ -1087,13 +1310,28 @@ def _render_downloads(
             "INFO as declared ANNOT_* entries. One record per "
             "query-annotation pair. Shown only when the coordinate input is VCF."
         )
-        st.download_button(
-            "Annotated VCF",
-            data=convert_df_to_vcf(
+        try:
+            vcf_data = convert_df_to_vcf(
                 display_df,
                 original_header_lines=vcf_header_lines,
                 contig_renames=vcf_contig_renames,
-            ),
+            )
+        except ChromosomeContigCollisionError as exc:
+            st.error(
+                "Annotated VCF export is unavailable. Several input "
+                "chromosome names were normalized to the same name, but "
+                "their VCF contig metadata disagree. AnnotateR cannot safely "
+                "choose which metadata to keep."
+            )
+            # Contig IDs and attribute names come from the file: plain text.
+            _show_identifiers([
+                f"{', '.join(exc.sources)} → {exc.target}",
+                f"conflicting attributes: {', '.join(sorted(exc.conflicts))}",
+            ])
+            return
+        st.download_button(
+            "Annotated VCF",
+            data=vcf_data,
             file_name="annotated_variants.vcf",
             mime="application/octet-stream",
             key="download_vcf",
@@ -1371,37 +1609,8 @@ def _original_header_declarations(original_header_lines) -> dict:
     return decls
 
 
-_CONTIG_ID_RE = re.compile(r'(?<=[<,])ID=("?)([^,>"]*)\1')
-
-
-def _reconcile_contig_lines(lines, contig_renames) -> list:
-    """
-    Rename the ID of ``##contig`` lines whose identifier was converted
-    (``contig_renames``: old -> new), changing nothing else on the line.
-    A line that is renamed onto an ID already declared earlier is dropped,
-    so a contig ID is never declared twice. Without renames the lines are
-    returned untouched.
-    """
-    if not contig_renames:
-        return list(lines)
-    out = []
-    declared = set()
-    for line in lines:
-        if line.startswith("##contig=<"):
-            m = _CONTIG_ID_RE.search(line)
-            if m:
-                new_id = contig_renames.get(m.group(2), m.group(2))
-                if new_id != m.group(2):
-                    line = (
-                        line[:m.start()]
-                        + f"ID={m.group(1)}{new_id}{m.group(1)}"
-                        + line[m.end():]
-                    )
-                if new_id in declared:
-                    continue
-                declared.add(new_id)
-        out.append(line)
-    return out
+# Collision-safe ##contig reconciliation lives in core (SPEC 5.1).
+_reconcile_contig_lines = reconcile_contig_lines
 
 
 def convert_df_to_vcf(
@@ -1433,7 +1642,7 @@ def convert_df_to_vcf(
       replaced) and the ANNOT_* declarations. Original definitions are
       never re-synthesized: no types or descriptions are invented.
     - ``contig_renames`` (old -> new chromosome identifiers changed by
-      chromosome standardization; the result frame and exported CHROM
+      chromosome normalization; the result frame and exported CHROM
       values carry the new identifiers): the ID of the matching
       ``##contig`` lines is renamed to the exported identifier, every
       other attribute (length, assembly, md5, ...) is kept. Contigs that

@@ -46,11 +46,18 @@ of these, plan around them.
 - **Feature filtering applies to GFF/GTF only**, matches the feature
   type string exactly, and defaults to `gene` only
   ([Feature filtering](using/feature-filtering.md)).
-- **Chromosome conversion covers UCSC ⇄ Ensembl only**, for the
-  mappings `1–22, X, Y, MT` ⇄ `chr1–chr22, chrX, chrY, chrM`. NCBI
-  accession-style identifiers are not converted; unmapped labels are
-  left unchanged
-  ([Chromosome identifiers](preparing-your-data/chromosome-identifiers.md)).
+- **Chromosome normalization needs an explicit genome assembly.**
+  Identifiers are resolved inside the selected assembly's registry; the
+  bundled registries cover 64 assemblies, other assemblies need a
+  [custom chromosome mapping](preparing-your-data/chromosome-identifiers.md#custom-chromosome-mapping),
+  which AnnotateR checks for structure but cannot verify biologically.
+  Not every sequence has a name in every naming system: identifiers that
+  are unknown to the assembly, or have no verified name in the chosen
+  naming, are kept as provided and reported. No liftover is performed
+  and no names are guessed
+  ([Chromosome identifiers and genome assemblies](preparing-your-data/chromosome-identifiers.md)).
+- **Custom chromosome mappings are limited to 500,000 rows and 64 MiB**
+  and are held in memory per session.
 - **GFF3 and GTF are annotation-only inputs.** The query uploader does
   not accept them ([Supported file formats](preparing-your-data/supported-formats.md)).
 - **Strand is an equality filter only** — no strand flip, no

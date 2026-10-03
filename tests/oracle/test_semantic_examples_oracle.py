@@ -17,7 +17,10 @@ import pytest
 from tests.oracle import reference as ref
 
 FIXTURE = Path(__file__).resolve().parent.parent / "fixtures" / "semantic_examples.json"
-EXAMPLES = json.loads(FIXTURE.read_text())["examples"]
+# Interval examples only; chromosome-naming examples are verified by
+# tests/oracle/test_chromosome_semantic_examples.py.
+EXAMPLES = [e for e in json.loads(FIXTURE.read_text())["examples"]
+            if e["kind"] != "chromosome_naming"]
 BY_NAME = {ex["name"]: ex for ex in EXAMPLES}
 
 REQUIRED_NAMES = {

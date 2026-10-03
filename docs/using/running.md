@@ -55,13 +55,16 @@ Failures are explicit errors that name what failed:
   fallback** to the other engine
   ([Choosing an annotation engine](engines.md),
   [Troubleshooting → engine unavailable](../troubleshooting.md#engine-unavailable)).
-- **Chromosome-style warnings** — not errors: the run proceeds. If you
-  chose manual "Keep original" and the two files use different
-  chromosome naming styles, a warning says rows on differently-named
-  chromosomes will not match; if no conversion mapping exists for the
-  styles, a warning says identifiers were left unchanged; and if the two
-  tables share no chromosome identifier, a warning says so
-  ([Chromosome identifiers](../preparing-your-data/chromosome-identifiers.md)).
+- **Chromosome naming messages.** A naming other than **Keep original
+  names** needs a genome assembly (or an uploaded custom mapping); without
+  one the run is blocked with a message that says what to select. An
+  invalid custom mapping blocks the run and lists the problems with line
+  numbers. These are the only blocking cases. Identifiers that are not
+  recognized in the selected assembly, or have no verified name in the
+  chosen naming, are **kept as provided and reported**: the run proceeds
+  and the results page lists them. If the two tables then share no
+  chromosome identifier, a warning says so
+  ([Chromosome identifiers and genome assemblies](../preparing-your-data/chromosome-identifiers.md)).
 
 An error means the run **could not happen**. A run that happens and
 finds nothing is the informational "No qualifying annotations were

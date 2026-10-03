@@ -17,7 +17,10 @@
   <https://annotater.serve.scilifelab.se> was updated from RC1 to RC2 by
   changing only the container image reference; the deployment is healthy.
 - **`main` may be ahead of RC2:** RC2 contains only the source at
-  `4edb362`.
+  `4edb362`. Assembly-aware chromosome normalization (bundled assembly
+  registries, custom chromosome mappings, VCF `##contig` normalization)
+  is not part of RC2; it is expected to ship in a later release
+  candidate, and no such image has been published or deployed.
 - **Final `v0.1.0` has not been released:** there is no `v0.1.0` git
   tag, no GitHub Release, no `0.1.0` image tag, no `latest` tag and no
   Zenodo record or DOI. Version metadata is

@@ -7,8 +7,8 @@ Run with: pytest tests/test_core.py -v
 import pytest
 import pandas as pd
 from streamlit_app.core import (
-    ChromosomeMapper,
     CoordinateConverter,
+    normalize_chromosomes,
     CoordinateNormalizer,
     BEDParser,
     GFFParser
@@ -16,51 +16,32 @@ from streamlit_app.core import (
 from streamlit_app.core.schema import MalformedFileError
 
 
-class TestChromosomeMapper:
-    """Test chromosome ID mapping"""
-    
-    def test_detect_ucsc_style(self):
-        """Test detection of UCSC style"""
-        mapper = ChromosomeMapper()
-        chroms = ["chr1", "chr2", "chr3", "chrX"]
-        assert mapper.detect_style(chroms) == "ucsc"
-    
-    def test_detect_ensembl_style(self):
-        """Test detection of Ensembl style"""
-        mapper = ChromosomeMapper()
-        chroms = ["1", "2", "3", "X", "MT"]
-        assert mapper.detect_style(chroms) == "ensembl"
-    
-    def test_ucsc_to_ensembl_conversion(self):
-        """Test UCSC to Ensembl conversion"""
-        mapper = ChromosomeMapper()
-        assert mapper.convert("chr1", "ucsc", "ensembl") == "1"
-        assert mapper.convert("chrX", "ucsc", "ensembl") == "X"
-        assert mapper.convert("chrM", "ucsc", "ensembl") == "MT"
-    
-    def test_ensembl_to_ucsc_conversion(self):
-        """Test Ensembl to UCSC conversion"""
-        mapper = ChromosomeMapper()
-        assert mapper.convert("1", "ensembl", "ucsc") == "chr1"
-        assert mapper.convert("X", "ensembl", "ucsc") == "chrX"
-        assert mapper.convert("MT", "ensembl", "ucsc") == "chrM"
-    
-    def test_dataframe_standardization(self):
-        """Test DataFrame chromosome standardization"""
-        mapper = ChromosomeMapper()
+class TestChromosomeNormalization:
+    """Registry-backed chromosome naming (replaces the hard-coded mapper)."""
+
+    @staticmethod
+    def _norm(chroms, target, assembly="GRCh38"):
         df = pd.DataFrame({
-            'chr': ['chr1', 'chr2', 'chr3'],
-            'start': [100, 200, 300],
-            'end': [200, 300, 400]
+            'chr': chroms,
+            'start': list(range(100, 100 + 100 * len(chroms), 100)),
+            'end': list(range(200, 200 + 100 * len(chroms), 100)),
         })
-        
-        result_df, source, target = mapper.standardize_dataframe(
-            df, 'chr', 'ensembl'
-        )
-        
-        assert source == "ucsc"
-        assert target == "ensembl"
-        assert result_df['chr'].tolist() == ['1', '2', '3']
+        return normalize_chromosomes(df, assembly=assembly, target=target)
+
+    def test_ucsc_to_ensembl_conversion(self):
+        out = self._norm(["chr1", "chrX", "chrM"], "ensembl").dataframe
+        assert out['chr'].tolist() == ["1", "X", "MT"]
+
+    def test_ensembl_to_ucsc_conversion(self):
+        out = self._norm(["1", "X", "MT"], "ucsc").dataframe
+        assert out['chr'].tolist() == ["chr1", "chrX", "chrM"]
+
+    def test_dataframe_standardization_keeps_coordinates(self):
+        result = self._norm(['chr1', 'chr2', 'chr3'], 'ensembl')
+        assert result.dataframe['chr'].tolist() == ['1', '2', '3']
+        assert result.dataframe['start'].tolist() == [100, 200, 300]
+        assert result.dataframe['end'].tolist() == [200, 300, 400]
+        assert result.report.complete
 
 
 class TestCoordinateConverter:
@@ -215,9 +196,10 @@ class TestIntegration:
         })
         
         # Standardize chromosomes
-        mapper = ChromosomeMapper()
-        coords_std, _, _ = mapper.standardize_dataframe(coords, 'chr', 'ucsc')
-        annots_std, _, _ = mapper.standardize_dataframe(annots, 'chr', 'ucsc')
+        coords_std = normalize_chromosomes(
+            coords, assembly="GRCh38", target="ucsc").dataframe
+        annots_std = normalize_chromosomes(
+            annots, assembly="GRCh38", target="ucsc").dataframe
         
         # Verify standardization
         assert coords_std['chr'].tolist() == ['chr1', 'chr2']

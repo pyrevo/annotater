@@ -76,13 +76,20 @@ are never re-synthesized — no types or descriptions are invented.
 
 **Chromosome identifiers and `##contig`.** The exported `CHROM` values
 are the chromosome identifiers of the AnnotateR result. When chromosome
-standardization changed a query identifier (for example `1` → `chr1`,
-`MT` → `chrM`), the ID of the matching `##contig` line is renamed to the
-exported identifier and its other attributes (`length`, `assembly`, `md5`
-and so on) are kept, so `CHROM` values and `##contig` declarations agree.
-Contigs that were not converted keep their original lines, a source with
-no `##contig` lines gets none, and no `##contig` line is added for an
-identifier the source never declared.
+normalization is active, every `##contig` declaration of the header is
+looked up in the same genome assembly (or custom mapping) and chromosome
+naming as the records — including contigs that no record uses — and its
+ID is renamed when the registry has a verified name (for example `1` →
+`chr1` for GRCh38 with UCSC names). Its other attributes (`length`,
+`assembly`, `md5` and so on) are kept, so `CHROM` values and `##contig`
+declarations agree. Contigs the assembly does not know, or that have no
+verified name in the chosen naming, keep their original lines; a source
+with no `##contig` lines gets none, and no `##contig` line is added for
+an identifier the source never declared. If several declarations are
+renamed to one identifier they are merged only when their remaining
+attributes are equivalent; otherwise the export is refused with a
+message naming the contigs and the conflicting attributes. With *Keep
+original names* the header is left as provided.
 
 **What this export does not claim.** It is not a byte-for-byte
 round trip of the input VCF. Original metadata are carried forward as

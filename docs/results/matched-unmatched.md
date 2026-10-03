@@ -58,6 +58,6 @@ table.
 A left-join result where *every* row is unmatched is a **valid,
 successful run** — the results section shows an information box
 ("No qualifying annotations were found for the selected operation and
-options"), not an error. The usual causes (chromosome style mismatch,
+options"), not an error. The usual causes (chromosome naming mismatch,
 strand matching on strand-less files, the wrong operation direction)
 are in [Troubleshooting → zero matches](../troubleshooting.md#zero-matches).

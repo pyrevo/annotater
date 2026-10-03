@@ -51,7 +51,8 @@ nav:
       - Query coordinates vs annotation features: preparing-your-data/query-vs-annotation.md
       - "Supported file formats (BED, GFF3, GTF, VCF, CSV/TSV)": preparing-your-data/supported-formats.md
       - "Coordinate systems (0-based / 1-based)": preparing-your-data/coordinate-systems.md
-      - "Chromosome identifiers (chr1 vs 1)": preparing-your-data/chromosome-identifiers.md
+      - "Chromosome identifiers and genome assemblies": preparing-your-data/chromosome-identifiers.md
+      - "Bundled genome assemblies": preparing-your-data/bundled-assemblies.md
       - "Strand information": preparing-your-data/strand-information.md
   - Annotation Operations:
       - Choosing an operation: operations/choosing-an-operation.md
@@ -85,6 +86,7 @@ nav:
   - Limitations: limitations.md
   - Technical Reference:
       - "Scientific semantics and engine contract": technical/scientific-contract.md
+      - "Chromosome registries: provenance and audit": technical/chromosome-registry.md
       - "Backend parity and benchmark": benchmark.md
       - "Architecture": architecture.md
       - "Engine contract (detailed design)": engine-contract.md

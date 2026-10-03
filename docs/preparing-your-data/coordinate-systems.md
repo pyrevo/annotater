@@ -118,8 +118,9 @@ both true at the same time.
 
 ## Where to go next
 
-- [Chromosome identifiers (chr1 vs 1)](chromosome-identifiers.md) — the
-  other normalization that happens at the door.
+- [Chromosome identifiers and genome assemblies](chromosome-identifiers.md)
+  — assembly-aware chromosome naming, which changes identifiers only,
+  never coordinates.
 - [Coordinate behavior per format](supported-formats.md) in the format
   reference.
 - [Overlap](../operations/overlap.md) and

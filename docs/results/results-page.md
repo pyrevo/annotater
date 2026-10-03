@@ -4,13 +4,6 @@ After a run, the **"3. Results"** section appears at the bottom of the
 page. Everything in it is derived from the **canonical result table**
 produced by the engine — nothing else.
 
-![The results section: provenance caption, metrics, Show filter and the
-result table with matched and unmatched rows](../assets/screenshots/results.png)
-
-*S3 — the results section for the Example 1 run (left join): matched
-rows carry `annot_*` values, unmatched rows have them missing and
-`has_overlap=False`.*
-
 ## From top to bottom
 
 ### Provenance caption

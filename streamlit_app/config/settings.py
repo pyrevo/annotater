@@ -50,25 +50,6 @@ class Settings:
         }
     }
     
-    # Chromosome naming conventions
-    CHROMOSOME_STYLES = {
-        "ucsc": {
-            "pattern": r"^chr[0-9XYM]+$",
-            "examples": ["chr1", "chr2", "chrX", "chrY", "chrM"],
-            "description": "UCSC style (chr prefix)"
-        },
-        "ensembl": {
-            "pattern": r"^[0-9XYMT]+$",
-            "examples": ["1", "2", "X", "Y", "MT"],
-            "description": "Ensembl style (no prefix)"
-        },
-        "ncbi": {
-            "pattern": r"^NC_[0-9]+\.[0-9]+$",
-            "examples": ["NC_000001.11", "NC_000023.11"],
-            "description": "NCBI RefSeq accessions"
-        }
-    }
-    
     # Annotation modes. The descriptions are the normative short
     # user-facing contract (SPEC 8.2-8.6); do not imply backend
     # differences (both engines are contractually equivalent).

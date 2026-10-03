@@ -20,7 +20,7 @@ make every value's origin unambiguous.
 
 | Column | Source | Notes |
 |---|---|---|
-| `coord_chr` | query | after any configured chromosome-ID standardization |
+| `coord_chr` | query | after any configured chromosome normalization |
 | `coord_start` | query | canonical **0-based** start |
 | `coord_end` | query | canonical **half-open** end |
 | `coord_strand` | query | present when the query carries strand; `+`/`-` or missing |
@@ -71,7 +71,7 @@ answer is there, under a different key.
 | Value | Normalization |
 |---|---|
 | Coordinates (`*_start`, `*_end`) | converted to canonical 0-based half-open at parse time; **not** re-adjusted for display |
-| Chromosomes (`*_chr`) | standardized at run time when the two files use different UCSC/Ensembl styles (default: auto-convert; other labels are unchanged) |
+| Chromosomes (`*_chr`) | normalized at run time through the selected genome assembly (or custom mapping) when a chromosome naming is chosen (default: *Keep original names*, unchanged); unrecognized identifiers are kept as provided |
 | Strands (`*_strand`) | **verbatim** `+`/`-`; missing stays missing — no case-folding, no guessing |
 | Scores | passed through as-is |
 | Attribute-derived columns | extracted verbatim from the raw attribute string |
