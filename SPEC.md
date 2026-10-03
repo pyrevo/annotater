@@ -99,7 +99,7 @@ A user MAY supply their own chromosome mapping instead of selecting a bundled as
 9. **Offline and scoped.** Loading a custom mapping MUST NOT use the network. Custom data are scoped to the workflow or session that supplied them: they MUST NOT be persisted, shared between sessions, written to the bundled registry data, or listed in the bundled catalog. A change of the mapping content MUST invalidate every result derived from the previous content; the file name carries no meaning.
 10. **Explicit source.** Selecting a custom mapping is an explicit chromosome source in the sense of item 9 above. As for a bundled assembly, no mapping is required, read or validated when names are kept as provided.
 
-Existing `ChromosomeMapper` behavior predates this contract and is superseded by it; it remains in service only until the registry-backed implementation replaces it.
+The former `ChromosomeMapper` (a fixed UCSC/Ensembl style converter) predated this contract and has been retired; the registry-backed implementation replaced it.
 
 ## 6. Canonical annotation result
 

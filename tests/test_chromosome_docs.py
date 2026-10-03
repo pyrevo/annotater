@@ -347,3 +347,10 @@ def test_new_pages_are_in_the_navigation_and_stale_screenshots_are_gone():
 def test_the_ci_workflow_checks_the_generated_assembly_docs():
     workflow = (ROOT / ".github/workflows/python-tests.yml").read_text()
     assert "generate_assembly_docs.py --check" in workflow
+
+
+def test_the_retired_chromosome_style_table_is_not_in_the_settings():
+    from streamlit_app.config import Settings
+    assert not hasattr(Settings, "CHROMOSOME_STYLES")
+    spec = (ROOT / "SPEC.md").read_text("utf-8")
+    assert "has been retired" in spec and "remains in service" not in spec
