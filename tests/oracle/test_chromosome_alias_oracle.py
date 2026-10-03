@@ -4,7 +4,7 @@
 assembly from the pinned upstream inputs only (UCSC chromAlias rows, reviewed
 label corrections, pinned Ensembl evidence). This module compares that
 expectation with (1) the generated ``data/*.tsv`` registries and (2) the
-runtime loader/resolver, for all six assemblies. The builder's own parsing
+runtime loader/resolver, for every bundled assembly. The builder's own parsing
 helpers are not used, so a bug shared by builder and loader cannot hide here.
 """
 

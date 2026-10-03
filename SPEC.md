@@ -389,7 +389,7 @@ The parity suite MUST include minimal fixtures for at least:
 - chromosome naming normalization;
 - coordinate-system boundary conversion.
 
-Registry-backed chromosome naming normalization (SPEC 5.1) is parity-relevant: once it is connected to the runtime, it MUST be covered by representative parity and oracle tests (resolution, rendering, unresolved and partial-resolution reporting, and the coordinate invariant), independent of backend selection. Those tests are not yet present; the current parity and oracle suites do not exercise chromosome normalization.
+Registry-backed chromosome naming normalization (SPEC 5.1) is parity-relevant: it MUST be covered by representative parity and oracle tests (resolution, rendering, unresolved and partial-resolution reporting, and the coordinate invariant), independent of backend selection. These are `tests/parity/test_chromosome_normalization_parity.py` (both engines on normalized inputs against hand-computed expectations), `tests/oracle/test_chromosome_alias_oracle.py` (every bundled registry and the runtime resolver against an independent reading of the pinned upstream data) and `tests/oracle/test_chromosome_semantic_examples.py`.
 
 Minimum-overlap fixtures were added in Task 6A (`tests/parity/test_min_overlap_parity.py`); strand fixtures were added in Task 6B (`tests/parity/test_strand_parity.py`); contains fixtures were added in Task 6C (`tests/parity/test_contains_parity.py`); within fixtures were added in Task 6D (`tests/parity/test_within_parity.py`); closest fixtures were added in Task 6E (`tests/parity/test_closest_parity.py`), including representative closest cases in the differential layer.
 
