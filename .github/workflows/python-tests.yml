@@ -24,6 +24,9 @@ jobs:
       - name: Check generated docs example blocks
         run: python scripts/generate_semantic_examples.py --check
 
+      - name: Check generated assembly documentation
+        run: python scripts/generate_assembly_docs.py --check
+
   tests:
     name: pytest (Python 3.12, ${{ matrix.os }})
     # Python 3.12 is the currently tested and supported runtime. 3.13/3.14

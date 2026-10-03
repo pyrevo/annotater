@@ -4,14 +4,6 @@ This is the complete tour of the sidebar ("Configure"). The **Run
 annotation** button sits at the very top of the page — every option in
 the sidebar feeds that one run.
 
-![The sidebar with the advanced options expanded: engine, operation,
-join behavior, input options, strand toggle, min_overlap slider and the
-feature filter](../assets/screenshots/configure.png)
-
-*S2 — the sidebar with **Advanced options** expanded. The strand
-checkbox is on, so the group label reads "Advanced options (strand
-required)"; `min_overlap` is 0.*
-
 ## Sidebar, top to bottom
 
 ### Annotation
@@ -53,12 +45,19 @@ required)"; `min_overlap` is 0.*
   detection; Auto-detect may infer a known format from the content, and
   otherwise a custom table is read as 0-based half-open. The declaration
   is applied exactly once. See [Coordinate systems](../preparing-your-data/coordinate-systems.md).
-- **Chromosome ID handling** (radio) — **Auto-convert if needed**
-  (default) or **Manual specification**, which reveals a **Target
-  style** dropdown: `UCSC (chr1, chr2, …)`, `Ensembl (1, 2, …)`,
-  **Keep original** (no conversion). Only UCSC ⇄ Ensembl identifiers are
-  converted. See
-  [Chromosome identifiers](../preparing-your-data/chromosome-identifiers.md).
+- **Genome assembly** (searchable dropdown) — starts on *Select genome
+  assembly*; nothing is preselected. Choose one of the
+  [bundled genome assemblies](../preparing-your-data/bundled-assemblies.md),
+  or **Custom chromosome mapping…**, which shows one **Chromosome mapping
+  file** uploader for your own `.tsv` table. It is needed only when
+  chromosome names are normalized.
+- **Chromosome naming** (dropdown) — **Keep original names** (default;
+  identifiers are not normalized and no assembly is needed), **UCSC
+  names**, **Ensembl names**, **NCBI RefSeq accessions**, **GenBank
+  accessions** or **Assembly names**. Each identifier is looked up in the
+  selected assembly and renamed only to a verified name of the same
+  sequence; coordinates are never changed. See
+  [Chromosome identifiers and genome assemblies](../preparing-your-data/chromosome-identifiers.md).
 
 ### Feature filter
 

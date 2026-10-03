@@ -150,9 +150,10 @@ Both engines are interchangeable execution backends: the same input and options 
 - **0-based (BED)**: For BED, BAM files
 - **1-based (GFF/GTF/VCF)**: For GFF, GTF, VCF, SAM files
 
-### Chromosome IDs
-- **Auto-convert**: Automatically standardize (recommended)
-- **Manual**: Choose target style (UCSC, Ensembl)
+### Chromosome naming
+- **Genome assembly**: choose the assembly your files were made with (a bundled one, or *Custom chromosome mapping…* to upload your own `.tsv`); nothing is preselected or guessed
+- **Chromosome naming**: *Keep original names* (default; no assembly needed), or UCSC, Assembly, Ensembl, NCBI RefSeq or GenBank names
+- Identifiers the assembly does not know, or that have no verified name in the chosen naming, are kept as provided and reported; coordinates never change
 
 ### Annotation Modes
 - **Overlap**: Find any overlapping annotations (default); optional minimum overlap fraction (0 = any positive overlap)

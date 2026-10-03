@@ -23,13 +23,6 @@ In the app, use the two uploaders in the **1. Upload** section:
 Each file shows a preview below its uploader (first rows, detected
 format, row count) so you can verify AnnotateR understood it.
 
-![The upload section with both example files uploaded and their previews
-visible](../assets/screenshots/upload.png)
-
-*S1 — the "1. Upload" section with the two bundled example files
-uploaded; the preview panels show detected format, row count, and the
-first rows.*
-
 ## Step 2 — Choose the operation (or accept the default)
 
 In the sidebar, the default **Operation** is **Overlap** with
@@ -44,13 +37,6 @@ options** group, is in [Configuring the analysis](../using/configuring.md).
 Click **Run annotation**. The results section appears below the
 uploaders with a provenance caption (engine · operation · join), four
 metrics, and the result table.
-
-![The results section: provenance caption, metrics, Show filter and the
-result table with matched and unmatched rows](../assets/screenshots/results.png)
-
-*S3 — the results section for the example run (left join): matched rows
-carry `annot_*` values, unmatched rows have them missing and
-`has_overlap=False`.*
 
 ## Step 4 — Look at the results
 

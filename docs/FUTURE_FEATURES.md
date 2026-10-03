@@ -229,6 +229,10 @@ annotater -i peaks.bed -a genes.gtf -o output.tsv
 Working with non-model organisms presents unique challenges. These features address common pain points:
 
 ### N1. Custom Chromosome Name Mapping
+**Status:** the TSV upload is implemented (assembly-aware chromosome naming, `Custom chromosome mapping…`; see
+`docs/preparing-your-data/chromosome-identifiers.md`). The interactive mapping interface and saving mappings for reuse
+below are not.
+
 **Problem:** Non-model organisms often have inconsistent chromosome naming (scaffold_1, LG01, Chr01, etc.)
 
 **Solution:**

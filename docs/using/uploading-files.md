@@ -14,13 +14,6 @@ uploader does not accept `.gff`, `.gff3` or `.gtf`.
 
 You need both files before a run is possible.
 
-![The upload section with both example files uploaded and their previews
-visible](../assets/screenshots/upload.png)
-
-*S1 — the "1. Upload" section with the two bundled example files
-uploaded; the preview panels show detected format, row count, and the
-first rows.*
-
 ## File limits
 
 | Constraint | Value |
@@ -55,8 +48,8 @@ Immediately (no button to press):
    stored results — see [Running the annotation](running.md).
 
 The preview shows the table **before** the feature filter and chromosome
-standardization, which are applied when you press **Run annotation**.
-It therefore does not show filtered rows or converted chromosome names
+normalization, which are applied when you press **Run annotation**.
+It therefore does not show filtered rows or renamed chromosome identifiers
 ([The AnnotateR workflow](../getting-started/workflow.md)).
 
 ## Replacing a file
@@ -103,6 +96,6 @@ and [Coordinate systems](../preparing-your-data/coordinate-systems.md).
 | Error mentioning a `track` line or "expected at least 3 tab-separated fields" at line 1 | UCSC `track`/`browser` lines are not supported; remove them |
 | Parsing error with a line number | malformed row — see the format-specific "Common errors" in [Supported file formats](../preparing-your-data/supported-formats.md) |
 | Preview looks wrong (off-by-one everywhere) | wrong **coordinate-system declaration** for a custom table, or pre-adjusted source coordinates |
-| Preview shows chromosome names different from the other file | expected: the preview is shown before chromosome standardization; check the **Chromosome ID handling** option, which is applied at run time |
+| Preview shows chromosome names different from the other file | expected: the preview is shown before chromosome normalization; check the **Genome assembly** and **Chromosome naming** options, which are applied at run time |
 
 Full diagnosis: [Troubleshooting](../troubleshooting.md).

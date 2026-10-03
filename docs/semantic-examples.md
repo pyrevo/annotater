@@ -50,7 +50,9 @@ Kind `chromosome_naming` declares chromosome-name normalization facts
 instead of intervals. Its facts are verified against pinned upstream data
 (`tests/oracle/test_chromosome_semantic_examples.py`) and the real
 normalization (`tests/test_chromosome_semantic_examples.py`). These blocks
-live on this maintainer page until the user documentation is written.
+are shown on this maintainer page and in the user guide
+(`docs/preparing-your-data/chromosome-identifiers.md`), which embeds the
+same generated blocks between the same markers.
 
 Exact accession identity (GRCh38, UCSC names):
 

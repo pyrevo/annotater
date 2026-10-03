@@ -47,12 +47,14 @@ steps that are applied when you press **Run annotation**:
 
 - **Feature filtering** — for GFF/GTF annotation files, only the
   selected feature types are kept ([Feature filtering](../using/feature-filtering.md));
-- **Chromosome standardization** — if the two files use different
-  UCSC/Ensembl naming styles, their chromosome IDs are put in one style
-  ([Chromosome identifiers](../preparing-your-data/chromosome-identifiers.md)).
+- **Chromosome normalization** — if you select a genome assembly (or a
+  custom mapping) and a chromosome naming, each chromosome identifier of
+  both files is looked up in that assembly and renamed to the chosen
+  naming system; with *Keep original names* nothing is changed
+  ([Chromosome identifiers and genome assemblies](../preparing-your-data/chromosome-identifiers.md)).
 
-So the previews do not show filtered rows or converted chromosome
-names.
+So the previews do not show filtered rows or renamed chromosome
+identifiers.
 
 ## Stage 3 — Annotate (UI: the sidebar)
 
@@ -65,7 +67,7 @@ The sidebar selects the execution of stage 3:
 - **Join behavior** — keep all query rows (left) or matched rows only
   (inner) ([Join behavior: left vs inner](../operations/join-behavior.md));
 - **Input options** — coordinate-system declaration (custom files and
-  extension-neutral tables), chromosome-ID handling;
+  extension-neutral tables), genome assembly and chromosome naming;
 - **Advanced options** — strand matching and the `min_overlap` slider
   (overlap mode only);
 - **Feature filter** — which GFF/GTF feature types participate.
