@@ -30,7 +30,7 @@ enforced by the test suite rather than assumed.
 
 AnnotateR is available as a hosted web deployment on SciLifeLab Serve
 (currently a project-restricted pre-release beta running the
-`0.1.0-rc2` image; the latest published image is `0.1.0-rc2`), as a
+`0.1.0-rc2` image; the latest published image is `0.1.0-rc3`), as a
 containerized local application using the published Docker images, and
 from source for development.
 
@@ -97,19 +97,20 @@ to keep their genomic files within their own computing environment can
 run the same AnnotateR application from the published container image:
 
 ```bash
-docker pull ghcr.io/pyrevo/annotater:0.1.0-rc2
+docker pull ghcr.io/pyrevo/annotater:0.1.0-rc3
 
 docker run --rm \
   -p 8501:8501 \
-  ghcr.io/pyrevo/annotater:0.1.0-rc2
+  ghcr.io/pyrevo/annotater:0.1.0-rc3
 ```
 
-`0.1.0-rc2` is the latest *published* pre-release image (source commit
-`4edb362e9143286754a41dabeb81f58034f2debc`, digest
-`sha256:a0b1b7e8941f0660208d90876a6e0aa3cd73ca9ec5e9704fdb2746c659d1f3f9`).
-`main` may contain changes made after it, there is no `latest` tag, and
-the final `v0.1.0` release does not exist yet. The earlier `0.1.0-rc1`
-remains published as a historical release candidate. Always use an
+`0.1.0-rc3` is the latest *published* pre-release image (source commit
+`7592b9de803ea19cc10042c2a10515c350d4fbfc`, digest
+`sha256:d4ea46ae879c60c34f98fcabd3545e04281dea40ab56f432c0aa2a10a021f661`;
+the same digest is also tagged `sha-7592b9d`). `main` may contain
+changes made after it, there is no `latest` tag, and the final `v0.1.0`
+release does not exist yet. The earlier `0.1.0-rc1` and `0.1.0-rc2`
+remain published as historical release candidates. Always use an
 explicit tag.
 
 Then open <http://localhost:8501>. For local Docker execution, uploaded
@@ -187,8 +188,26 @@ results, reproduction) and `benchmarks/benchmark_engines.py`
 
 ## Citation
 
-Citation metadata is maintained in [CITATION.cff](CITATION.cff) (version
-and release date are recorded when the release is made).
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.23415801.svg)](https://doi.org/10.5281/zenodo.23415801)
+
+AnnotateR is archived on Zenodo. To cite the project in general, use the
+Concept DOI, which is version-independent and always resolves to the
+latest published release:
+
+> Das, J., & Volpe, M. (2026). AnnotateR [Computer software]. Zenodo.
+> <https://doi.org/10.5281/zenodo.23415801>
+
+To cite the current release candidate specifically, use the version DOI
+`10.5281/zenodo.23415802`:
+
+> Das, J., & Volpe, M. (2026). AnnotateR (Version v0.1.0-rc3)
+> [Computer software]. Zenodo.
+> <https://doi.org/10.5281/zenodo.23415802>
+
+The in-app **Cite AnnotateR** button copies the Concept DOI form.
+Machine-readable metadata is maintained in [CITATION.cff](CITATION.cff);
+it stays version-independent, and the `version` and `date-released`
+fields are recorded when the final `v0.1.0` release is made.
 
 ## License
 

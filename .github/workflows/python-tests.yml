@@ -82,14 +82,38 @@ jobs:
       - name: Run test suite
         run: pytest
 
+  frontend-tests:
+    name: frontend lint & build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Run frontend tests and build
+        working-directory: frontend
+        run: npm test
+
   docker-smoke:
     name: docker build + in-container smoke + benchmark smoke (linux/amd64)
     # ubuntu-latest is x86_64, so the amd64 image builds natively (no QEMU).
     # The macOS runner has no Docker daemon, so this job is Linux-only.
     # This job verifies the production image end-to-end without a registry:
-    # build, engine/health smoke (scripts/docker_smoke.sh), and a small
-    # deterministic benchmark run whose parity gate fails the job if the two
-    # canonical engines disagree (PLAN Task 8).
+    #   * scientific core (scripts/docker_smoke.sh: bedtools, engines, parity);
+    #   * the served FastAPI/React app (scripts/docker_smoke_api.sh: startup,
+    #     /health, static frontend, routes, two isolated sessions, export);
+    #   * the scientific runtime with the network fully off
+    #     (scripts/offline_smoke.py under `--network none`);
+    #   * a small deterministic benchmark run whose parity gate fails the job
+    #     if the two canonical engines disagree (PLAN Task 8).
     # The FULL benchmark (docs/benchmark.md) is deliberately NOT a CI gate:
     # performance numbers are reporting data, not pass/fail criteria, and
     # timing thresholds would be flaky on shared runners.
@@ -101,11 +125,17 @@ jobs:
       - name: Build image (linux/amd64)
         run: docker build --platform linux/amd64 -t annotater:ci .
 
-      - name: In-container smoke (imports, bedtools, engines, annotation, health)
+      - name: Scientific-core smoke (bedtools, engines, canonical parity)
         # NOTE: --entrypoint bash is required — the image ENTRYPOINT is the
-        # Streamlit server (the Serve entry point), and plain `docker run ... bash ...`
+        # FastAPI server (the Serve entry point), and plain `docker run ... bash ...`
         # would append the args to it and start the web server instead of the smoke.
         run: docker run --rm --entrypoint bash annotater:ci /app/scripts/docker_smoke.sh
+
+      - name: Served-application smoke (startup, health, routes, sessions, export)
+        run: docker run --rm --entrypoint bash annotater:ci /app/scripts/docker_smoke_api.sh
+
+      - name: Offline scientific-runtime smoke (no network)
+        run: docker run --rm --network none --entrypoint python annotater:ci /app/scripts/offline_smoke.py
 
       - name: Benchmark smoke (deterministic, parity-gated)
         # Single line: in a folded `run` scalar a trailing backslash is not a

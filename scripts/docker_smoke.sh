@@ -1,5 +1,5 @@
 #!/bin/sh
-# In-container smoke test for the AnnotateR production image (Task 8).
+# In-container smoke test for the AnnotateR production image scientific core.
 #
 # Verifies, in order:
 #   1. bedtools is on PATH at the expected version;
@@ -7,8 +7,12 @@
 #   3. a canonical smoke annotation completes with BOTH engines on the
 #      bundled example data, and the two canonical results are strictly
 #      equal (the same strict comparator the parity suite uses);
-#   4. Streamlit starts from the Serve entry point (app.py), passes the
-#      health endpoint, and the UI endpoint responds.
+#   4. exact, hand-computed scientific assertions on tiny inline fixtures.
+#
+# This script is deliberately server-agnostic: it checks the scientific
+# runtime only.  The served FastAPI/React application (startup, routes,
+# sessions, export) is covered separately by scripts/docker_smoke_api.sh, and
+# the network-disabled scientific runtime by scripts/offline_smoke.py.
 #
 # Exits non-zero on the first failure.  Used by CI (docker job) and by
 # local deployment verification (see docs/deployment.md).
@@ -90,34 +94,5 @@ for key, cls in (("bedtools", BedtoolsEngine), ("polars-bio", PolarsBioEngine)):
     assert got["distance"].tolist() == [0, 0, 15], (key, got)
 print("exact scientific smoke assertions: verified on both engines")
 EOF
-
-# --- 4. Streamlit from the Serve entry point ------------------------------
-echo "starting streamlit (entry point: app.py) ..."
-python -m streamlit run app.py --server.port=8501 --server.address=0.0.0.0 \
-    > /tmp/streamlit_smoke.log 2>&1 &
-STREAMLIT_PID=$!
-
-ok=""
-# 180s budget: native container starts in ~10s; under QEMU emulation
-# (arm64 hosts) the first import chain can take several minutes.
-for _ in $(seq 1 180); do
-    if curl -fsS http://localhost:8501/_stcore/health >/dev/null 2>&1; then
-        ok=1
-        break
-    fi
-    if ! kill -0 "$STREAMLIT_PID" 2>/dev/null; then
-        break
-    fi
-    sleep 1
-done
-[ -n "$ok" ] || { cat /tmp/streamlit_smoke.log >&2; fail "streamlit health check failed"; }
-echo "health endpoint: OK"
-
-HTTP_CODE="$(curl -s -o /dev/null -w '%{http_code}' http://localhost:8501/)"
-[ "$HTTP_CODE" = "200" ] || fail "UI endpoint returned HTTP ${HTTP_CODE}"
-echo "UI endpoint: HTTP ${HTTP_CODE} OK"
-
-kill "$STREAMLIT_PID" 2>/dev/null || true
-wait "$STREAMLIT_PID" 2>/dev/null || true
 
 echo "SMOKE PASS"

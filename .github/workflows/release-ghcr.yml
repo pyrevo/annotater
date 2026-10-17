@@ -145,11 +145,20 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
 
-      - name: In-container smoke (imports, bedtools, engines, annotation, health)
+      - name: In-container smoke (bedtools, engines, canonical parity)
         # Pre-push gate: the candidate image must pass the same smoke CI
         # runs (scripts/docker_smoke.sh) before anything reaches the
-        # registry. --entrypoint bash overrides the Streamlit ENTRYPOINT.
+        # registry. --entrypoint bash overrides the FastAPI server ENTRYPOINT.
         run: docker run --rm --entrypoint bash ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:sha-$(git rev-parse --short HEAD) /app/scripts/docker_smoke.sh
+
+      - name: Served-application smoke (startup, health, routes, sessions, export)
+        # Pre-push gate for the served FastAPI/React application, so a broken
+        # route or session model can never be published to GHCR.
+        run: docker run --rm --entrypoint bash ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:sha-$(git rev-parse --short HEAD) /app/scripts/docker_smoke_api.sh
+
+      - name: Offline scientific-runtime smoke (no network)
+        # Pre-push gate proving the scientific runtime is self-contained.
+        run: docker run --rm --network none --entrypoint python ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:sha-$(git rev-parse --short HEAD) /app/scripts/offline_smoke.py
 
       - name: Push both tags
         run: |

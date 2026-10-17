@@ -1,7 +1,7 @@
 # Scientific semantics and engine contract
 
 *Documents the upcoming v0.1.0 release (currently in beta testing; the latest
-published pre-release image is `0.1.0-rc2`).*
+published pre-release image is `0.1.0-rc3`).*
 
 This page is the **user-facing entry point** to the binding technical
 documentation. For developers, scientists reviewing semantics, and CI

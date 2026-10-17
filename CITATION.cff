@@ -27,10 +27,12 @@ keywords:
 # reviewing the conflicting historical metadata documented in the
 # provenance audit (this file's original notes; see
 # docs/implementation-notes.md, "Release-prep 0.1.0 housekeeping").
-# No DOI, publication, or release date is claimed.
+# The citation below is version-independent; release DOIs and release
+# metadata live in README.md and docs/release-plan-0.1.0.md.
 license: BSD-3-Clause
 
-# NOTE: `version` and `date-released` are intentionally absent. No git tag
-# or GitHub Release exists yet; per CFF best practice they will be added
-# during the v0.1.0 release step after manual GUI acceptance (see
-# docs/release-plan-0.1.0.md). No DOI or publication is claimed.
+# NOTE: `version` and `date-released` are intentionally absent so this file
+# stays version-independent. A pre-release git tag, GitHub Release and
+# Zenodo DOI exist for `v0.1.0-rc3` (see docs/release-plan-0.1.0.md);
+# per CFF best practice `version` and `date-released` are added during the
+# final `v0.1.0` release step after manual GUI acceptance.

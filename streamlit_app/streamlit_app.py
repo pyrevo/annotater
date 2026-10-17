@@ -16,7 +16,6 @@ interval engine differs.
 
 import hashlib
 import logging
-import re
 import sys
 from pathlib import Path
 
@@ -34,7 +33,6 @@ from streamlit_app.core import (
     CanonicalSchemaError,
     CustomParser,
     FormatDetector,
-    canonicalize_annotation_result,
     coordinate_system_for,
     extension_authoritative_for,
     normalize_intervals,
@@ -49,23 +47,28 @@ from streamlit_app.core.chrom_registry import (
     load_catalog,
     resolve_registry_source,
 )
-from streamlit_app.core.chromosome_inputs import normalize_input_chromosomes
 from streamlit_app.core.engine_registry import (
     DEFAULT_ENGINE,
     ENGINE_OPTIONS,
-    EngineUnavailableError,
-    build_engine,
     engine_available,
     engine_label,
     unavailable_message,
 )
+from streamlit_app.core.execution import (
+    AnnotationError,
+    AnnotationExecutionError,
+    AnnotationRequest,
+    execute_annotation,
+)
+from streamlit_app.core.vcf_export import (
+    VCFExportError,
+    build_annotated_vcf,
+)
 from streamlit_app.core.vcf_contigs import (
     ChromosomeContigCollisionError,
-    header_contig_renames,
     reconcile_contig_lines,
 )
 from streamlit_app.utils import (
-    DataValidator,
     format_file_size,
     save_uploaded_file,
 )
@@ -179,42 +182,9 @@ _FEATURE_TYPE_OPTIONS = [
     "start_codon", "stop_codon",
 ]
 
-# Directional UTR choices are user-facing labels; each maps to the exact,
-# case-sensitive source ``feature`` strings it accepts: the GFF3 /
-# Sequence Ontology terms (five_prime_UTR, three_prime_UTR) and the
-# lowercase spelling used before GFF3 v1.16. A generic ``UTR`` (e.g.
-# GENCODE GTF) carries no direction and is deliberately not matched. All
-# other choices are matched literally. Source values are never rewritten.
-#
-# ``transcript`` means transcript-level annotation records, matched only
-# against this explicit list of source values (no regex, substring,
-# case-insensitive, fuzzy or Sequence Ontology expansion). Each value is
-# named as a transcript-level feature by a primary source:
-#   transcript, mRNA, lnc_RNA, snoRNA, pseudogenic_transcript - Ensembl
-#       GFF3 README ("type of transcript features");
-#   transcript, mRNA, ncRNA, rRNA, tRNA, primary_transcript - NCBI RefSeq
-#       GFF3 documentation (gene-RNA-exon conventions);
-#   transcript - GENCODE; mRNA, noncoding_transcript - GFF3 specification.
-# Ambiguous or undocumented RNA-like types (snRNA, miRNA, lincRNA, RNA,
-# processed_transcript, NMD_transcript_variant, ...) are deliberately
-# excluded. See docs/using/feature-filtering.md.
-_FEATURE_TYPE_SOURCE_VALUES = {
-    "transcript": (
-        "transcript", "mRNA", "lnc_RNA", "ncRNA", "rRNA", "tRNA", "snoRNA",
-        "primary_transcript", "pseudogenic_transcript",
-        "noncoding_transcript",
-    ),
-    "5' UTR": ("five_prime_UTR", "five_prime_utr"),
-    "3' UTR": ("three_prime_UTR", "three_prime_utr"),
-}
-
-
-def _expand_feature_types(selected):
-    """Map selected filter choices to the set of accepted source values."""
-    accepted = set()
-    for choice in selected:
-        accepted.update(_FEATURE_TYPE_SOURCE_VALUES.get(choice, (choice,)))
-    return accepted
+# The selected choices -> accepted source values mapping (and its rationale)
+# lives in the shared core (streamlit_app.core.execution.expand_feature_types),
+# which every frontend uses for feature filtering.
 
 
 # ---------------------------------------------------------------------------
@@ -343,21 +313,6 @@ def _config_signature(cfg: dict, coord_identity, annot_identity, coord_format):
         coord_format,
         st.session_state.get("coord_mapping"),
     )
-
-
-def _min_overlap_for(cfg: dict):
-    """
-    Engine-facing min_overlap value.
-
-    min_overlap is meaningful for the overlap mode only (SPEC 8.2); other
-    modes never receive it, so a stale slider value cannot leak into a
-    contains/within/closest run. ``0`` maps to ``None`` (ordinary positive
-    overlap) per the existing UI/API policy.
-    """
-    value = cfg["min_overlap"]
-    if cfg["mode"] != "overlap" or not value:
-        return None
-    return float(value)
 
 
 # ---------------------------------------------------------------------------
@@ -890,167 +845,128 @@ def run_annotation(cfg: dict, coord_df, annot_info, signature):
     if annot_info is None:
         st.error("Upload an annotation file first.")
         return
-    annot_df = annot_info["df"]
-    annot_format = annot_info["format"]
-
-    # --- Validation (invalid user configuration, not a backend error) ---
-    is_valid, error = DataValidator.validate_coordinates(coord_df)
-    if not is_valid:
-        st.error(f"Query coordinate file is not valid: {error}")
-        return
-    is_valid, error = DataValidator.validate_coordinates(annot_df)
-    if not is_valid:
-        st.error(f"Annotation file is not valid: {error}")
-        return
-
-    # --- Feature filter (GFF/GTF only) ---
-    if (
-        annot_format in ("gff", "gtf")
-        and cfg["feature_types"]
-        and "feature" in annot_df.columns
-    ):
-        original_count = len(annot_df)
-        annot_df = annot_df[
-            annot_df["feature"].isin(_expand_feature_types(cfg["feature_types"]))
-        ].copy()
-        if len(annot_df) == 0:
-            st.warning(
-                f"No annotations match the selected feature types "
-                f"(filtered {original_count:,} features). Adjust the feature "
-                f"filter and run again."
-            )
-            return
-        st.caption(
-            f"Using {len(annot_df):,} of {original_count:,} annotation "
-            f"features (feature filter)."
-        )
-
-    # --- Chromosome naming ---
-    # "Keep original names" is a true no-op (no assembly needed). Any
-    # normalization requires an explicitly selected assembly; nothing is
-    # inferred from the files.
-    chr_summary = None
-    contig_renames = {}
+    # The chromosome registry (bundled assembly or custom mapping) is a UI
+    # concern: resolving it here surfaces the mapping errors beside the
+    # upload, exactly as before. "Keep original names" needs no registry.
+    registry = None
     if cfg["chr_naming"] is not None:
         registry = _registry_for_run(cfg)
         if registry is None:
             return
-        normalized = normalize_input_chromosomes(
-            coord_df, annot_df, registry=registry, target=cfg["chr_naming"],
-        )
-        coord_df, annot_df = normalized.coord_df, normalized.annot_df
-        # Renames come from the normalization report, never re-derived.
-        contig_renames = dict(normalized.coord_renames)
-        # Header ##contig declarations are normalized through the same
-        # registry and target, also for contigs no row uses. Row-derived
-        # renames are the same registry's answer, so they agree.
-        coord_parse = st.session_state.get("coord_parse")
-        header_lines = (coord_parse.get("vcf_header_lines")
-                        if isinstance(coord_parse, dict) else None)
-        if header_lines:
-            contig_renames = {
-                **header_contig_renames(
-                    header_lines, registry, cfg["chr_naming"]),
-                **contig_renames,
-            }
-        chr_summary = {
-            # The genome assembly's label for a bundled registry; None for
-            # a custom mapping, which has no assembly identity.
-            "assembly_label": (
-                _ASSEMBLY_LABELS[registry.assembly_id]
-                if registry.assembly_id is not None else None),
-            "source_label": (
-                _ASSEMBLY_LABELS[registry.assembly_id]
-                if registry.assembly_id is not None else registry.name),
-            "naming_label": _NAMING_LABELS[cfg["chr_naming"]],
-            "coord_report": normalized.coord_report,
-            "annot_report": normalized.annot_report,
-        }
 
-    # --- No-shared-identifiers warning ---
-    # Whatever the conversion outcome, if the two tables share no
-    # chromosome identifiers at all, no row can match: say so explicitly
-    # instead of silently producing an all-unmatched result.
-    if len(coord_df) > 0 and len(annot_df) > 0:
-        shared = set(coord_df["chr"].unique()) & set(annot_df["chr"].unique())
-        if not shared:
-            st.warning(
-                "No shared chromosome identifiers remain between query and "
-                "annotation data. Select the genome assembly and a "
-                "chromosome naming above to normalize names, or check the "
-                "names used by each file."
-            )
-
-    # --- Engine selection (execution only; explicit failure, no fallback) ---
-    try:
-        engine = build_engine(
-            cfg["engine"],
-            mode=cfg["mode"],
-            use_strand=cfg["use_strand"],
-            min_overlap=_min_overlap_for(cfg),
-        )
-    except EngineUnavailableError as exc:
-        st.error(str(exc))
-        return
-    except ValueError as exc:
-        st.error(f"Invalid option: {exc}")
-        return
-    label = engine_label(cfg["engine"])
-
-    # --- Execution ---
-    try:
-        with st.spinner(f"Running {cfg['mode']} annotation with {label}..."):
-            raw_result = engine.intersect(coord_df, annot_df, how=cfg["join"])
-        # The canonical result contract is the UI/export boundary: both
-        # backends must pass the same adapter, so the engine choice can
-        # never change the result schema, missing-value representation,
-        # or exported content (Task 7 §6, SPEC 6).
-        result_df = canonicalize_annotation_result(
-            raw_result,
-            coord_df,
-            annot_df,
-            extra_columns=("distance",) if cfg["mode"] == "closest" else (),
-        )
-    except Exception as exc:
-        # Backend execution failure: log the full traceback for developers,
-        # show a concise, labeled error to the user (SPEC 9.2).
-        logger.exception(
-            "%s backend failed during %s annotation (%s join)",
-            label, cfg["mode"], cfg["join"],
-        )
-        st.error(
-            f"{label} failed during {cfg['mode']} annotation "
-            f"({cfg['join']} join): {exc}"
-        )
-        return
-
-    # --- Store results with the configuration signature ---
     coord_parse = st.session_state.get("coord_parse")
     vcf_header_lines = (
         coord_parse.get("vcf_header_lines")
         if isinstance(coord_parse, dict)
         else None
     )
+
+    # The single scientific workflow lives in the shared core service; this
+    # frontend only translates its configuration into a request and renders
+    # the outcome.
+    request = AnnotationRequest(
+        query=coord_df,
+        annotation=annot_info["df"],
+        annotation_format=annot_info["format"],
+        engine=cfg["engine"],
+        mode=cfg["mode"],
+        join=cfg["join"],
+        use_strand=cfg["use_strand"],
+        min_overlap=cfg["min_overlap"],
+        feature_types=tuple(cfg["feature_types"]),
+        chr_naming=cfg["chr_naming"],
+        registry=registry,
+        coord_vcf_header_lines=vcf_header_lines,
+    )
+
+    label = engine_label(cfg["engine"])
+    try:
+        with st.spinner(f"Running {cfg['mode']} annotation with {label}..."):
+            outcome = execute_annotation(request)
+    except AnnotationExecutionError as exc:
+        # Backend execution failure: log the full traceback for developers,
+        # show a concise, labeled error to the user (SPEC 9.2).
+        logger.exception(
+            "%s backend failed during %s annotation (%s join)",
+            exc.engine_label, exc.mode, exc.join,
+        )
+        st.error(exc.message)
+        return
+    except AnnotationError as exc:
+        # "warning" severity is a valid request that yields nothing (for
+        # example a feature filter that matches no annotation); every other
+        # code is an invalid request. Both carry a user-facing message.
+        if exc.severity == "warning":
+            st.warning(exc.message)
+        else:
+            st.error(exc.message)
+        return
+
+    # Feature-filter caption (unchanged wording; only when it applied).
+    feature_filter = outcome.feature_filter
+    if feature_filter is not None and feature_filter.applied:
+        st.caption(
+            f"Using {feature_filter.used_rows:,} of "
+            f"{feature_filter.total_rows:,} annotation features "
+            f"(feature filter)."
+        )
+
+    # Non-fatal notes (for example no shared chromosome identifiers).
+    for warning in outcome.warnings:
+        st.warning(warning.message)
+
+    chr_summary = _chr_summary_for_display(outcome.chromosome_normalization)
+
+    # --- Store results with the configuration signature ---
     st.session_state.update(
         {
             "result_signature": signature,
-            "result_df": result_df,
-            "result_coord_df": coord_df,
-            "result_engine": label,
-            "result_mode": cfg["mode"],
-            "result_join": cfg["join"],
+            "result_df": outcome.result_df,
+            "result_coord_df": outcome.coord_df,
+            "result_engine": outcome.engine_label,
+            "result_mode": outcome.mode,
+            "result_join": outcome.join,
             "result_coord_format": _coord_format_of(cfg),
             # Original VCF ## metadata (once per source file), restored
             # verbatim by the annotated VCF export.
-            "result_vcf_header_lines": vcf_header_lines,
+            "result_vcf_header_lines": outcome.vcf_header_lines,
             # Query chromosome identifiers renamed by normalization
             # (old -> new); reconciles ##contig lines in the VCF export.
-            "result_vcf_contig_renames": contig_renames,
+            "result_vcf_contig_renames": dict(outcome.vcf_contig_renames),
             # Chromosome-normalization summary shown with the results
             # (None when names were kept as provided).
             "result_chr_normalization": chr_summary,
         }
     )
+
+
+def _chr_summary_for_display(normalization):
+    """UI labels for a core chromosome-normalization outcome, or ``None``.
+
+    The shared core reports structured data (assembly id, registry name,
+    per-table reports); mapping that to user-facing labels is a presentation
+    concern and stays here, so the service remains framework-independent.
+    """
+    if normalization is None:
+        return None
+    assembly_label = (
+        _ASSEMBLY_LABELS[normalization.assembly_id]
+        if normalization.assembly_id is not None
+        else None
+    )
+    return {
+        # The genome assembly's label for a bundled registry; None for a
+        # custom mapping, which has no assembly identity.
+        "assembly_label": assembly_label,
+        "source_label": (
+            assembly_label
+            if normalization.assembly_id is not None
+            else normalization.registry_name
+        ),
+        "naming_label": _NAMING_LABELS[normalization.target],
+        "coord_report": normalization.coord_report,
+        "annot_report": normalization.annot_report,
+    }
 
 
 def _coord_format_of(cfg: dict):
@@ -1329,6 +1245,12 @@ def _render_downloads(
                 f"conflicting attributes: {', '.join(sorted(exc.conflicts))}",
             ])
             return
+        except VCFExportError as exc:
+            # Typed export failure (no coordinate columns to reconstruct from,
+            # or a conflicting original ANNOT_* declaration). Surface the
+            # specific message; never offer a download of an error artifact.
+            st.error(f"Annotated VCF export is unavailable: {exc}")
+            return
         st.download_button(
             "Annotated VCF",
             data=vcf_data,
@@ -1491,125 +1413,17 @@ def _render_charts_and_gene_list(df):
 
 
 # ---------------------------------------------------------------------------
-# VCF export (unchanged canonical semantics; kept at module level)
+# VCF export
+#
+# The annotated-VCF writer now lives in the framework-independent core
+# module (``streamlit_app/core/vcf_export.py``) so the Streamlit and FastAPI
+# frontends share one implementation. ``convert_df_to_vcf`` below is a thin
+# compatibility wrapper (existing tests import it from this module); the
+# fidelity contract and collision policy are documented in the core module.
 # ---------------------------------------------------------------------------
 
-#: ``coord_*`` metadata columns that map to fixed VCF fields (or the
-#: canonical interval keys) rather than to sample columns: every other
-#: ``coord_*`` column in a VCF query result is an original sample column.
-_VCF_FIXED_COORD_COLUMNS = frozenset({
-    "coord_chr", "coord_start", "coord_end", "coord_id", "coord_ref",
-    "coord_alt", "coord_qual", "coord_filter", "coord_info",
-    "coord_format", "coord_strand",
-})
-
-#: ``annot_*`` columns carrying interval/derived values rather than
-#: annotation metadata: never serialized into VCF INFO.
-_VCF_NONINFO_ANNOT_COLUMNS = frozenset({
-    "annot_chr", "annot_start", "annot_end", "has_overlap",
-})
-
-
-def _vcf_field(value) -> str:
-    """
-    Render a value as a VCF field: canonical missing (``pd.NA``/``NaN``/``None``)
-    becomes the VCF MISSING value ``.``; anything else is stringified as-is.
-    Prevents ``"<NA>"``/``"nan"`` sentinels from leaking into exports.
-    """
-    if pd.api.types.is_scalar(value) and pd.isna(value):
-        return "."
-    return str(value)
-
-
-def _vcf_qual(value) -> str:
-    """
-    Render a QUAL value. Missing becomes the VCF MISSING value ``.``.
-
-    The parser stores QUAL as a float (source ``50`` becomes ``50.0``);
-    integer-valued numbers are written back without a fractional part so
-    an integer source QUAL round-trips verbatim, while genuinely
-    fractional values and non-numeric text are written as stored.
-    """
-    if pd.api.types.is_scalar(value) and pd.isna(value):
-        return "."
-    try:
-        numeric = float(value)
-    except (TypeError, ValueError):
-        return str(value)
-    if numeric.is_integer():
-        return str(int(numeric))
-    return str(value)
-
-
-def _vcf_info_key(annotation_column: str) -> str:
-    """
-    ANNOT_*-namespaced INFO identifier for an annotation column.
-
-    The namespace is what keeps emitted keys from colliding with original
-    VCF INFO IDs; a suffix that is not a valid VCF INFO ID (must match
-    ``[A-Za-z_][A-Za-z0-9_]*``) is deterministically prefixed with
-    ``x_``.
-    """
-    suffix = annotation_column[len("annot_"):]
-    if not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", suffix):
-        suffix = f"x_{suffix}"
-    return f"ANNOT_{suffix}"
-
-
-def _escape_vcf_info_value(value: str) -> str:
-    """
-    Encode an annotation value for VCF INFO. VCF INFO values may not
-    contain ``;`` (field separator), ``=`` (key/value separator), or
-    whitespace, so the repository's established mapping applies:
-    ``;`` -> ``|``, `` `` -> ``_``, ``=`` -> ``:``. Commas are valid in
-    String values and pass through. This is a documented lossy encoding:
-    re-importing the exported file yields the escaped form, not the
-    original value text.
-    """
-    return value.replace(";", "|").replace(" ", "_").replace("=", ":")
-
-
-def _info_contains_key(info_text: str, key: str) -> bool:
-    """True if an original INFO field already carries ``key`` (as a flag
-    or a ``key=value`` token)."""
-    for token in info_text.split(";"):
-        if token == key or token.startswith(f"{key}="):
-            return True
-    return False
-
-
-def _vcf_sample_name(coord_column: str) -> str:
-    """
-    Original #CHROM header name for a ``coord_*`` sample column.
-
-    Reverses the parser's deterministic collision rename: a sample whose
-    name collides with a parser/core column is stored as
-    ``sample_<name>`` (e.g. a sample literally named ``start``).
-    Pathological sample names that already start with ``sample_`` cannot
-    be distinguished from renamed columns; the renamed form wins.
-    """
-    name = coord_column[len("coord_"):]
-    if name.startswith("sample_"):
-        name = name[len("sample_"):]
-    return name
-
-
-def _original_header_declarations(original_header_lines) -> dict:
-    """
-    Original ``##INFO`` declarations from retained header lines,
-    mapped by INFO ID (first declaration wins, source order).
-    """
-    decls = {}
-    for line in original_header_lines or []:
-        if not isinstance(line, str):
-            continue
-        m = re.match(r"##INFO=<ID=([A-Za-z0-9_]+)", line)
-        if m:
-            decls.setdefault(m.group(1), line)
-    return decls
-
-
-# Collision-safe ##contig reconciliation lives in core (SPEC 5.1).
+# Collision-safe ##contig reconciliation lives in core (SPEC 5.1); re-exposed
+# here under the historical private name some tests import.
 _reconcile_contig_lines = reconcile_contig_lines
 
 
@@ -1619,235 +1433,26 @@ def convert_df_to_vcf(
     """
     Convert results DataFrame back to VCF format.
 
-    Export fidelity contract (Task C / F8):
+    Thin compatibility wrapper around the shared, framework-independent
+    exporter in :mod:`streamlit_app.core.vcf_export`
+    (:func:`streamlit_app.core.vcf_export.build_annotated_vcf`), so the
+    Streamlit and FastAPI frontends share one implementation. The full
+    fidelity contract (original record fields, FORMAT/sample columns, INFO,
+    header/contig handling, ANNOT_* declarations, POS semantics) and the
+    collision policy are documented in the core module.
 
-    - original record fields the parse/result path retained are exported
-      verbatim: ID, REF, ALT, FILTER, the raw INFO field (including
-      END), and, when present, the FORMAT column and per-sample columns
-      in #CHROM order;
-    - annotation metadata is APPENDED to INFO under the ANNOT_*
-      namespace; every emitted key is declared by a generated ##INFO
-      line (conservative ``Number=.,Type=String``; no unsupported type
-      claims) and never overwrites or duplicates an original INFO key;
-    - ``original_header_lines`` (the source file's ``##`` metadata,
-      retained by the VCF parser and passed once per source file, not
-      per result row) is preserved verbatim in stable source order:
-      contig/INFO/FORMAT/FILTER definitions and any other original
-      metadata. Exactly one ``##fileformat`` line is emitted — the
-      source's version when present, never silently upgraded or
-      downgraded (``VCFv4.2`` only as the fallback for a source with
-      none); duplicate identical lines are emitted once. The exporter
-      then adds ``##source=AnnotateR <version>`` and ``##date`` (additions —
-      an original ``##source``/``##date`` line is retained, not
-      replaced) and the ANNOT_* declarations. Original definitions are
-      never re-synthesized: no types or descriptions are invented.
-    - ``contig_renames`` (old -> new chromosome identifiers changed by
-      chromosome normalization; the result frame and exported CHROM
-      values carry the new identifiers): the ID of the matching
-      ``##contig`` lines is renamed to the exported identifier, every
-      other attribute (length, assembly, md5, ...) is kept. Contigs that
-      were not renamed, and files with no renames, keep their lines
-      untouched; no ``##contig`` line is ever invented for a source
-      that lacked one.
-    - ANNOT_* declaration collision policy: if the original header
-      already declares an ``ANNOT_*`` INFO ID, the original definition
-      stands and no generated duplicate is emitted when it is
-      ``Type=String`` (compatible with the exported string values);
-      any other declared type (or a missing Type) is a conflict and
-      the export fails with an explicit ``ValueError`` naming the ID —
-      the original definition is never silently overwritten.
-    - one output record per canonical result row: a source variant
-      matching N annotations appears N times with different ANNOT_*
-      payloads and identical original fields;
-    - unmatched rows keep the original record fields and carry no
-      ANNOT_* entries (INFO is the original INFO, or ``.`` when that was
-      missing too). POS = coord_start + 1 (canonical 0-based start ->
-      1-based VCF POS); REF/ALT/END are never rewritten from annotation
-      coordinates.
+    Raises :class:`~streamlit_app.core.vcf_export.UnrecoverableVCFError` when
+    no coordinate columns are present and
+    :class:`~streamlit_app.core.vcf_export.VCFInfoDeclarationConflict` when an
+    original ``ANNOT_*`` declaration is not String-typed. Contig metadata
+    conflicts raise
+    :class:`~streamlit_app.core.vcf_contigs.ChromosomeContigCollisionError`.
     """
-    original = _reconcile_contig_lines(
-        [
-            line for line in (original_header_lines or [])
-            if isinstance(line, str) and line.startswith("##")
-        ],
-        contig_renames,
+    return build_annotated_vcf(
+        df,
+        original_header_lines=original_header_lines,
+        contig_renames=contig_renames,
     )
-
-    # Exactly one ##fileformat: the source's version when present, so
-    # the export is never silently upgraded or downgraded; VCFv4.2 is
-    # only the fallback for a source without a fileformat line.
-    fileformat = "##fileformat=VCFv4.2"
-    for line in original:
-        if line.lower().startswith("##fileformat"):
-            fileformat = line
-            break
-    lines = [fileformat]
-    seen = {fileformat}
-    for line in original:
-        if line.lower().startswith("##fileformat"):
-            # Exactly one fileformat line: the source's first, already
-            # emitted above; any further (already invalid) declaration
-            # is dropped rather than emitted twice.
-            continue
-        if line in seen:
-            # Duplicate identical metadata lines are emitted once.
-            continue
-        seen.add(line)
-        lines.append(line)
-    # AnnotateR provenance: additions, never replacements — an original
-    # ##source/##date line (if any) was already retained above.
-    lines.append(f"##source=AnnotateR {Settings.VERSION}")
-    lines.append(f"##date={pd.Timestamp.now().strftime('%Y%m%d')}")
-
-    # Map internal columns to VCF standard columns
-    # Canonical start is 0-based and equals POS - 1, so POS = coord_start + 1.
-    # (Using coord_end would be wrong for multi-base variants.)
-
-    res = df.copy()
-
-    # Ensure required columns exist, fill with '.' if missing
-    required_map = {
-        "coord_chr": "CHROM",
-        "coord_start": "POS",
-        "coord_id": "ID",
-        "coord_ref": "REF",
-        "coord_alt": "ALT",
-        "coord_qual": "QUAL",
-        "coord_filter": "FILTER",
-    }
-
-    # Check which columns we actually have
-    available_map = {}
-    for int_col, vcf_col in required_map.items():
-        if int_col in df.columns:
-            available_map[int_col] = vcf_col
-        # Special handling if coord_ prefix is missing
-        elif int_col.replace("coord_", "") in df.columns:
-            available_map[int_col.replace("coord_", "")] = vcf_col
-
-    if not available_map:
-        return "##Error: Could not reconstruct VCF. Missing coordinate columns."
-
-    # Identify annotation columns for INFO field
-    annot_cols = [
-        c
-        for c in df.columns
-        if c.startswith("annot_") and c not in _VCF_NONINFO_ANNOT_COLUMNS
-    ]
-
-    # Declare every ANNOT_* key the exporter can emit, in frame column
-    # order (deterministic; de-duplicated after ID sanitization).
-    info_keys: dict = {}
-    for col in annot_cols:
-        key = _vcf_info_key(col)
-        if key not in info_keys:
-            info_keys[key] = col
-    # ANNOT_* declarations, honoring the collision policy: a pre-existing
-    # original declaration of the same ID stands — a String-typed one is
-    # kept as-is (no generated duplicate); any other type is refused
-    # with an explicit error rather than silently overwritten.
-    original_decls = _original_header_declarations(original)
-    conflicts = []
-    declarations = []
-    for key, col in info_keys.items():
-        decl = original_decls.get(key)
-        if decl is None:
-            declarations.append(
-                f"##INFO=<ID={key},Number=.,Type=String,"
-                f'Description="AnnotateR annotation (source column: {col})">'
-            )
-            continue
-        type_match = re.search(r"Type=([A-Za-z0-9_]+)", decl)
-        if not type_match or type_match.group(1) != "String":
-            conflicts.append(key)
-    if conflicts:
-        raise ValueError(
-            "Cannot export the annotated VCF: the original header "
-            "declares INFO ID(s) "
-            f"{', '.join(sorted(conflicts))} with a type other than "
-            "String, which conflicts with AnnotateR's ANNOT_* string "
-            "annotation values. The original definitions are not "
-            "overwritten; remove or rename those IDs in the source VCF."
-        )
-    lines.extend(declarations)
-
-    # Original FORMAT/sample columns: any coord_* column beyond the fixed
-    # ones, in frame order (= the original #CHROM sample order).
-    has_format = "coord_format" in df.columns
-    sample_columns = [
-        c for c in df.columns
-        if c.startswith("coord_") and c not in _VCF_FIXED_COORD_COLUMNS
-    ]
-    chrom_header = ["#CHROM", "POS", "ID", "REF", "ALT", "QUAL", "FILTER", "INFO"]
-    if has_format:
-        chrom_header.append("FORMAT")
-    chrom_header.extend(_vcf_sample_name(c) for c in sample_columns)
-    lines.append("\t".join(chrom_header))
-
-    vcf_rows = []
-
-    for _, row in res.iterrows():
-        # Build standard fields
-        fields = []
-        fields.append(_vcf_field(row.get("coord_chr", row.get("chr", "."))))
-
-        # POS: reconstruct the 1-based VCF position from the canonical start
-        # (POS = coord_start + 1)
-        pos_value = row.get("coord_start", row.get("start", "."))
-        try:
-            fields.append(str(int(pos_value) + 1))
-        except (TypeError, ValueError):
-            fields.append(".")
-
-        # ID/REF/ALT: canonical missing must export as '.', never '<NA>'.
-        fields.append(_vcf_field(row.get("coord_id", row.get("id", "."))))
-        fields.append(_vcf_field(row.get("coord_ref", row.get("ref", "."))))
-        fields.append(_vcf_field(row.get("coord_alt", row.get("alt", "."))))
-        # QUAL: canonical missing -> '.', integer-valued floats written
-        # back as integers (see _vcf_qual); FILTER: canonical missing
-        # (e.g. VCF FILTER "." = filters not applied) exports as '.',
-        # never as a rendered "<NA>"/"nan" token.
-        fields.append(_vcf_qual(row.get("coord_qual", row.get("qual", "."))))
-        fields.append(_vcf_field(row.get("coord_filter", row.get("filter", "."))))
-
-        # Build INFO field: the original field is preserved VERBATIM
-        # (including END for symbolic variants); ANNOT_* entries are
-        # appended, never replacing or duplicating original keys.
-        original_info = _vcf_field(row.get("coord_info", pd.NA))
-        info_parts = [original_info] if original_info != "." else []
-        emitted_keys = set()
-        for col in annot_cols:
-            key = _vcf_info_key(col)
-            if key in emitted_keys:
-                # Two columns sanitizing to the same INFO ID: the first
-                # in frame order wins, deterministically.
-                continue
-            if _info_contains_key(original_info, key):
-                # The source INFO already carries this key: the original
-                # value wins and is never silently overwritten.
-                continue
-            raw_val = row[col]
-            # Canonical missing (unmatched rows after canonicalization)
-            # must not leak into INFO as 'Key=<NA>'.
-            if pd.api.types.is_scalar(raw_val) and pd.isna(raw_val):
-                continue
-            val = str(raw_val)
-            if val and val not in [".", "nan", "-1", "None", "<NA>"]:
-                info_parts.append(f"{key}={_escape_vcf_info_value(val)}")
-                emitted_keys.add(key)
-
-        fields.append(";".join(info_parts) if info_parts else ".")
-
-        # Original FORMAT and sample columns, preserved verbatim (VCF '.'
-        # is already canonical missing and renders back to '.').
-        if has_format:
-            fields.append(_vcf_field(row.get("coord_format", pd.NA)))
-        for c in sample_columns:
-            fields.append(_vcf_field(row[c]))
-
-        vcf_rows.append("\t".join(fields))
-
-    return "\n".join(lines + vcf_rows)
 
 
 # ---------------------------------------------------------------------------

@@ -49,9 +49,25 @@ deterministic walkthroughs.
 
 This site is the user manual for the upcoming AnnotateR v0.1.0 release
 (currently in beta testing; the latest published pre-release image is
-`0.1.0-rc2`, and these pages describe the current `main`, which may be
+`0.1.0-rc3`, and these pages describe the current `main`, which may be
 ahead of it).
 Technical and developer material (architecture, engine contract,
 benchmark, deployment) lives in the
 [Technical Reference](technical/scientific-contract.md) section and in
 the [repository](https://github.com/pyrevo/annotater).
+
+## Citing AnnotateR
+
+If AnnotateR supports your work, please cite it. The project is archived
+on Zenodo; the Concept DOI always resolves to the latest published
+release:
+
+> Das, J., & Volpe, M. (2026). AnnotateR [Computer software]. Zenodo.
+> <https://doi.org/10.5281/zenodo.23415801>
+
+To cite the current release candidate specifically, use the version DOI
+`10.5281/zenodo.23415802`
+(<https://doi.org/10.5281/zenodo.23415802>). The in-app **Cite
+AnnotateR** button copies the Concept DOI form. Machine-readable metadata
+is maintained in
+[`CITATION.cff`](https://github.com/pyrevo/annotater/blob/main/CITATION.cff).

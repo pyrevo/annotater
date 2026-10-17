@@ -13,10 +13,10 @@ from __future__ import annotations
 import pytest
 from streamlit.testing.v1 import AppTest
 
-from streamlit_app.streamlit_app import (
-    _FEATURE_TYPE_OPTIONS,
-    _expand_feature_types,
+from streamlit_app.core.execution import (
+    expand_feature_types as _expand_feature_types,
 )
+from streamlit_app.streamlit_app import _FEATURE_TYPE_OPTIONS
 from tests.test_streamlit_app_ui import (
     _app,
     _assert_no_exception,

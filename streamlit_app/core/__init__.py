@@ -35,6 +35,27 @@ from .normalization import (
     normalize_intervals,
     parse_and_normalize,
 )
+from .execution import (
+    AnnotationError,
+    AnnotationExecutionError,
+    AnnotationOutcome,
+    AnnotationRequest,
+    AnnotationWarning,
+    ChromosomeNormalizationOutcome,
+    FeatureFilterReport,
+    execute_annotation,
+    expand_feature_types,
+)
+from .vcf_export import (
+    VCF_FIXED_COORD_COLUMNS,
+    VCF_NONINFO_ANNOT_COLUMNS,
+    UnrecoverableVCFError,
+    VCFExportError,
+    VCFInfoDeclarationConflict,
+    build_annotated_vcf,
+    derive_vcf_contig_renames,
+    deterministic_date_stamp,
+)
 
 __all__ = [
     "ChromosomeNormalizationReport",
@@ -62,4 +83,21 @@ __all__ = [
     "extension_authoritative_for",
     "normalize_intervals",
     "parse_and_normalize",
+    "AnnotationError",
+    "AnnotationExecutionError",
+    "AnnotationOutcome",
+    "AnnotationRequest",
+    "AnnotationWarning",
+    "ChromosomeNormalizationOutcome",
+    "FeatureFilterReport",
+    "execute_annotation",
+    "expand_feature_types",
+    "VCF_FIXED_COORD_COLUMNS",
+    "VCF_NONINFO_ANNOT_COLUMNS",
+    "UnrecoverableVCFError",
+    "VCFExportError",
+    "VCFInfoDeclarationConflict",
+    "build_annotated_vcf",
+    "derive_vcf_contig_renames",
+    "deterministic_date_stamp",
 ]

@@ -1,7 +1,12 @@
 altair==6.3.0
     # via streamlit
+annotated-doc==0.0.5
+    # via fastapi
+annotated-types==0.8.0
+    # via pydantic
 anyio==4.15.1
     # via
+    #   httpx
     #   starlette
     #   streamlit
 attrs==26.1.0
@@ -11,7 +16,10 @@ attrs==26.1.0
 black==26.5.1
     # via annotater
 certifi==2026.7.22
-    # via requests
+    # via
+    #   httpcore
+    #   httpx
+    #   requests
 charset-normalizer==3.5.1
     # via requests
 click==8.5.0
@@ -29,13 +37,22 @@ datafusion==53.0.0
     # via polars-bio
 et-xmlfile==2.0.0
     # via openpyxl
+fastapi==0.143.0
+    # via annotater
 h11==0.16.0
-    # via uvicorn
+    # via
+    #   httpcore
+    #   uvicorn
+httpcore==1.0.9
+    # via httpx
 httptools==0.8.0
     # via streamlit
+httpx==0.28.1
+    # via annotater
 idna==3.20
     # via
     #   anyio
+    #   httpx
     #   requests
 iniconfig==2.3.0
     # via pytest
@@ -66,6 +83,8 @@ numpy==2.5.3
     #   streamlit
 openpyxl==3.1.5
     # via annotater
+opentelemetry-api==1.45.1
+    # via fastapi
 packaging==26.3
     # via
     #   altair
@@ -109,6 +128,10 @@ pyarrow==24.0.0
     #   streamlit
 pybedtools==0.12.1
     # via annotater
+pydantic==2.14.1
+    # via fastapi
+pydantic-core==2.50.1
+    # via pydantic
 pydeck==0.9.3
     # via streamlit
 pygments==2.21.0
@@ -124,7 +147,9 @@ pytest-cov==7.1.0
 python-dateutil==2.9.0.post0
     # via pandas
 python-multipart==0.0.32
-    # via streamlit
+    # via
+    #   annotater
+    #   streamlit
 pytokens==0.4.1
     # via black
 referencing==0.37.0
@@ -142,7 +167,9 @@ ruff==0.16.8
 six==1.17.0
     # via python-dateutil
 starlette==1.6.0
-    # via streamlit
+    # via
+    #   fastapi
+    #   streamlit
 streamlit==1.64.0
     # via annotater
 toml==0.10.2
@@ -154,9 +181,18 @@ typing-extensions==4.16.0
     #   altair
     #   anyio
     #   datafusion
+    #   fastapi
+    #   opentelemetry-api
+    #   pydantic
+    #   pydantic-core
     #   referencing
     #   starlette
     #   streamlit
+    #   typing-inspection
+typing-inspection==0.4.4
+    # via
+    #   fastapi
+    #   pydantic
 tzdata==2026.4 ; sys_platform == 'emscripten' or sys_platform == 'win32'
     # via pandas
 urllib3==2.8.0

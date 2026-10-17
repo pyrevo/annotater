@@ -77,3 +77,6 @@ benchmarks/results/
 
 # MkDocs build output
 site/
+
+# Temporary files
+changes_note.md

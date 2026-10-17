@@ -21,6 +21,7 @@ dist/
 build/
 
 # Local artifacts that must never reach the image
+frontend/node_modules/
 benchmarks/results/
 *.log
 .DS_Store

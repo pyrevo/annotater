@@ -38,9 +38,17 @@ DOCS = ROOT / "docs"
 GUIDE = DOCS / "preparing-your-data" / "chromosome-identifiers.md"
 ASSEMBLIES = DOCS / "preparing-your-data" / "bundled-assemblies.md"
 METHODS = DOCS / "technical" / "chromosome-registry.md"
-APP_SOURCE = (ROOT / "streamlit_app" / "streamlit_app.py").read_text("utf-8")
+# User-facing strings live in the GUI script and, since the shared execution
+# service was extracted (Task 14.2), in streamlit_app/core/execution.py too.
+APP_SOURCES = [
+    ROOT / "streamlit_app" / "streamlit_app.py",
+    ROOT / "streamlit_app" / "core" / "execution.py",
+]
 # adjacent string literals joined, unicode escapes resolved
-APP_TEXT = re.sub(r'"\s*\n\s*"', "", APP_SOURCE).replace("\\u2026", "…")
+APP_TEXT = "\n".join(
+    re.sub(r'"\s*\n\s*"', "", source).replace("\\u2026", "…")
+    for source in (path.read_text("utf-8") for path in APP_SOURCES)
+)
 
 # Pages that are not published on the site (see mkdocs.yml exclude_docs).
 EXCLUDED = {"manual-plan.md", "release-plan-0.1.0.md", "FUTURE_FEATURES.md",

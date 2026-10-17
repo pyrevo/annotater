@@ -1,23 +1,28 @@
 # AnnotateR production image.
 #
+# Multi-stage build:
+# Stage 1: Build the modern React frontend with Node 22
+# Stage 2: Production Python image with FastAPI backend, bedtools, and Polars-Bio
+#
 # Platform: pinned to linux/amd64 by default (ARG PLATFORM). The pinned
 # polars-bio release provides manylinux x86_64 wheels only (no
-# linux/aarch64 wheel), so an arm64 build cannot resolve dependencies
-# natively; on arm64 hosts Docker Desktop pulls the amd64 base and
-# emulates it via QEMU. Do NOT override PLATFORM to another value unless
-# a wheel exists for it — the build will fail at `pip install`. See
-# docs/deployment.md.
+# linux/aarch64 wheel).
 ARG PLATFORM=linux/amd64
+
+# --- Stage 1: Frontend Build ---
+FROM node:22-slim AS frontend-builder
+WORKDIR /app/frontend
+COPY frontend/package.json frontend/package-lock.json ./
+RUN npm ci
+COPY frontend/ ./
+RUN npm run build
+
+# --- Stage 2: Production Python Image ---
 FROM --platform=${PLATFORM} python:3.12-slim
 
 # System dependencies:
-#   bedtools - required by BedtoolsEngine (the python:3.12-slim base
-#              currently resolves to Debian 13 trixie, which ships 2.31.1,
-#              matching the validated environment; the container smoke
-#              test asserts the version).
-#   curl     - required by the HEALTHCHECK below.
-# No compiler toolchain is needed: every pinned Python dependency has an
-# official manylinux x86_64 wheel (verified against the pinned versions).
+#   bedtools - required by BedtoolsEngine (2.31.1 in Debian)
+#   curl     - required by container health checks
 RUN apt-get update && apt-get install -y --no-install-recommends \
     bedtools \
     curl \
@@ -26,11 +31,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 WORKDIR /app
 
 # Dependencies: installed from the committed uv.lock (the single source of
-# truth for the resolved graph, including transitive dependencies), not
-# re-resolved by pip. `uv export --frozen` fails instead of updating the
-# lock, and --require-hashes makes the install verify every artifact
-# against the hashes recorded in uv.lock. Runtime dependencies only (no
-# dev extra). uv is pinned and removed again after the install.
+# truth for the resolved graph, including transitive dependencies), never
+# re-resolved by pip. `uv export --frozen` fails instead of updating the lock,
+# and `uv pip install --require-hashes` makes the install verify every artifact
+# against the hashes recorded in uv.lock. Runtime dependencies only (no dev
+# extra). uv is pinned and removed again after the install, so it is not part
+# of the runtime image.
 # To change dependencies intentionally see docs/deployment.md.
 ARG UV_VERSION=0.11.8
 COPY pyproject.toml uv.lock ./
@@ -40,36 +46,39 @@ RUN pip install --no-cache-dir "uv==${UV_VERSION}" \
     && rm /tmp/locked-requirements.txt \
     && pip uninstall -y uv
 
-# Application code.
-#   app.py                       - Serve entry-point shim (imports the real
-#                                  app module; see docs/deployment.md)
-#   streamlit_app/               - the application package
-#   data/examples/               - bundled example inputs (no user data)
-#   benchmarks/benchmark_engines.py - in-container benchmark smoke (CI)
-#   scripts/docker_smoke.sh      - in-container smoke test (CI / local)
+# Application code & dependencies
 COPY app.py ./app.py
+COPY start-script.sh ./start-script.sh
 COPY streamlit_app/ ./streamlit_app/
 COPY data/examples/ ./data/examples/
 COPY benchmarks/benchmark_engines.py ./benchmarks/benchmark_engines.py
 COPY scripts/docker_smoke.sh ./scripts/docker_smoke.sh
-RUN chmod +x ./scripts/docker_smoke.sh
+COPY scripts/docker_smoke_api.sh ./scripts/docker_smoke_api.sh
+COPY scripts/offline_smoke.py ./scripts/offline_smoke.py
+RUN chmod +x ./scripts/docker_smoke.sh ./scripts/docker_smoke_api.sh ./start-script.sh
 
-# Writable scratch directory for intermediate bedtools files
-RUN mkdir -p /tmp/annotator && chmod 777 /tmp/annotator
+# Copy built frontend assets from builder stage
+COPY --from=frontend-builder /app/frontend/dist ./frontend/dist
 
-# SciLifeLab Serve and local container deployments expect Streamlit on
-# 8501 (http://localhost:8501).
-EXPOSE 8501
+# Non-root user setup for container security
+# SciLifeLab Serve standard specifies UID 1000
+RUN groupadd -g 1000 appgroup && \
+    useradd -u 1000 -g appgroup -s /bin/bash -m appuser && \
+    mkdir -p /tmp/annotator && \
+    chown -R appuser:appgroup /app /tmp/annotator && \
+    chmod 777 /tmp/annotator
 
-HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-    CMD curl --fail http://localhost:8501/_stcore/health || exit 1
+# Default port for the AnnotateR FastAPI/React web service (start-script.sh).
+EXPOSE 8000
 
-ENV STREAMLIT_SERVER_HEADLESS=true \
-    STREAMLIT_SERVER_FILE_WATCHER_TYPE=poll \
-    STREAMLIT_SERVER_ENABLE_CORS=false \
-    STREAMLIT_BROWSER_GATHER_USAGE_STATS=false \
-    PYTHONUNBUFFERED=1
+HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
+    CMD curl --fail http://localhost:8000/health || exit 1
 
-# Serve entry point: the main application file MUST be named app.py in the
-# working directory (SciLifeLab Serve requirement).
-ENTRYPOINT ["python", "-m", "streamlit", "run", "app.py", "--server.port=8501", "--server.address=0.0.0.0"]
+ENV PYTHONUNBUFFERED=1
+
+# Run as non-root user
+USER appuser
+
+# Entry point: runs the start-script.sh (SciLifeLab Serve requirement for Custom Apps)
+ENTRYPOINT ["./start-script.sh"]
+
