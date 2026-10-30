@@ -73,6 +73,23 @@ jobs:
         run: zensical build --clean --strict
       - name: Check the Zensical site against the Material reference
         run: python scripts/check_docs_site.py --site site --reference "$RUNNER_TEMP/material-site"
+      # Real-browser search regression over HTTP (never file://). Fails the job
+      # if search cannot open, returns nothing, or a result cannot be opened,
+      # and --self-test proves the check itself fails on deliberately broken copies.
+      - name: Install pinned browser-test dependencies
+        run: |
+          python -m pip install -r docs/requirements-docs-browser.txt
+          python -m playwright install --with-deps chromium
+      - name: Check Zensical search in a real browser
+        run: python scripts/check_docs_search.py --site site --self-test --diagnostics-dir "$RUNNER_TEMP/search-diagnostics"
+      - name: Upload search diagnostics (failures only, not published)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: zensical-search-diagnostics
+          path: ${{ runner.temp }}/search-diagnostics
+          if-no-files-found: ignore
+          retention-days: 7
       - name: Upload the Zensical site for review (not published)
         uses: actions/upload-artifact@v4
         with:
