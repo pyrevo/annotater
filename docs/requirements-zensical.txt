@@ -1,0 +1,4 @@
+# Experimental Zensical documentation build (parallel to the Material for
+# MkDocs build in requirements-docs.txt; it does not replace it). Pinned to
+# the version audited in M3.1a. Used only by the `docs-zensical` CI job.
+zensical==0.0.73

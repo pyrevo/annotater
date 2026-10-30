@@ -48,3 +48,34 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+
+  # EXPERIMENTAL, parallel to `build` above (M3.1b): builds the same sources
+  # with Zensical and compares the result with the Material build. It never
+  # publishes: no Pages artifact, no deploy, and `deploy` does not need it.
+  # The artifact is a plain Actions artifact for human review only.
+  docs-zensical:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install docs dependencies (Material reference + pinned Zensical)
+        run: python -m pip install -r docs/requirements-docs.txt -r docs/requirements-zensical.txt
+      - name: Build the Material reference site
+        env:
+          NO_MKDOCS_2_WARNING: "1"
+        run: mkdocs build --strict -d "$RUNNER_TEMP/material-site"
+      - name: Build the documentation site with Zensical
+        run: zensical build --clean --strict
+      - name: Check the Zensical site against the Material reference
+        run: python scripts/check_docs_site.py --site site --reference "$RUNNER_TEMP/material-site"
+      - name: Upload the Zensical site for review (not published)
+        uses: actions/upload-artifact@v4
+        with:
+          name: zensical-site
+          path: site
+          retention-days: 7

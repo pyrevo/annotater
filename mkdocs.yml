@@ -22,6 +22,9 @@ exclude_docs: |
 
 theme:
   name: material
+  # Read only by Zensical (docs/requirements-zensical.txt), where it keeps the
+  # Material look; Material for MkDocs ignores it (output is byte-identical).
+  variant: classic
   primary: "#006DAE"  # = streamlit_app/config/settings.py THEME.primaryColor
   scheme: default  # light by default, dark toggle available
   icon:
