@@ -10,6 +10,7 @@ turns that skip into a failure).
 from __future__ import annotations
 
 import importlib.util
+import hashlib
 import json
 import os
 import re
@@ -216,3 +217,20 @@ def test_structural_gate_fails_on_broken_copies_of_the_real_site(built_sites, tm
     mutate(copy)
     problems = checker.check(copy, material_site)
     assert any(expected in p for p in problems), problems
+
+
+def _tree_digest(root: Path) -> str:
+    digest = hashlib.sha256()
+    for path in sorted(p for p in root.rglob("*") if p.is_file()):
+        digest.update(path.relative_to(root).as_posix().encode())
+        digest.update(hashlib.sha256(path.read_bytes()).digest())
+    return digest.hexdigest()
+
+
+def test_structural_self_test_never_modifies_the_checked_site(built_sites, capsys):
+    site, material_site = built_sites
+    before = _tree_digest(site)
+    assert checker.self_test(site, material_site) == []
+    assert _tree_digest(site) == before
+    assert checker.check(site, material_site) == []
+    assert _tree_digest(site) == before

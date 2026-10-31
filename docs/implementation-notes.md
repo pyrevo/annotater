@@ -1773,46 +1773,102 @@ documentation build. In order, it:
 5. runs `scripts/check_docs_search.py --self-test`: real Chromium over HTTP
    on desktop (mouse and keyboard) and mobile, searching a known term,
    opening a result;
-6. only then uploads `site/` with `actions/upload-pages-artifact`.
+6. uploads `site/` with `actions/upload-pages-artifact` as the very last step.
 
-The `--self-test` options apply deliberate breakages to isolated copies and
-fail the job if any of them goes undetected. A missing Playwright or Chromium
-fails the job (exit status 2). The `deploy` job is unchanged: it needs `build`
-and runs only for pushes with `DOCS_PUBLISH == 'true'`. The former
-experimental `docs-zensical` job and its `zensical-site` review artifact were
-folded into `build` to avoid building twice.
+Nothing may run between the Zensical build and the upload except the two
+verification steps (and a failure-only diagnostics upload from the temp
+directory), so the verified directory is the published directory.
+`tests/test_docs_production_contract.py` enforces this together with the
+audited command of every step (no `|| true`, chaining, shell or environment
+overrides, extra installs or upgrades), the pins, and the Classic variant, and
+proves each guard with mutations. The `--self-test` options apply deliberate
+breakages to isolated copies and fail the job if any goes undetected. A missing
+Playwright or Chromium fails the job (exit status 2).
+
+The former experimental `docs-zensical` job and its `zensical-site` review
+artifact were folded into `build` to avoid building twice.
+
+### Deployment
+
+`deploy` needs `build` and runs only when
+`github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.DOCS_PUBLISH == 'true'`.
+Pull requests, tag pushes and every other ref build and verify but never
+publish; a failed build skips `deploy`. Before the cutover review the condition
+did not check the ref, so a `v*` tag push could also deploy; that is no longer
+the case (the site publishes when the content reaches `main`).
 
 ### Intentional differences from Material for MkDocs
 
 Not byte-identical; the structural check compares what readers and links
 depend on, not the markup.
 
+- Home page `<title>` is "Home - AnnotateR" (Material: "AnnotateR"); the other
+  45 page titles are identical.
+- The footer credit reads "Made with Zensical" (Material: "Made with Material
+  for MkDocs"); the licence line is unchanged.
+- `sitemap.xml` lists the same 45 URLs but omits `<lastmod>`; `sitemap.xml.gz`
+  is no longer generated.
 - Search index path: `/search.json` (was `/search/search_index.json`).
-- `sitemap.xml.gz` is no longer generated (`sitemap.xml` is, with the same URLs).
-- Search is a dialog (Ctrl/Cmd+K), results are more granular, and the search
-  interface is English-only (Zensical does not localize it yet).
 - The table-of-contents heading reads "On this page" instead of "Table of
   contents".
+- Search is a dialog (Ctrl/Cmd+K) with more granular results, and the search
+  interface is English-only (Zensical does not localize it yet).
 - Fenced code blocks nested in 3-space-indented list items render as real code
   blocks (Material rendered them as inline code with the language word leaked
   into the text); the checker tolerates exactly that difference on two pages.
-- Zensical is a `0.0.x` release; pin it and bump deliberately.
+- Zensical is a `0.0.x` release: pin it and bump deliberately, with the checks
+  green on the new version.
 - `file://` is not supported for search (the `offline` plugin would rewrite
   every URL to `*.html`); preview with `python -m http.server -d site`.
 
 ### Rollback
 
-Use a reviewed pull request (or an explicitly authorised recovery action);
-no documentation content changes are needed:
+The cutover changed the workflow, the contract tests, the checker scripts and
+the requirement files together, so the **primary rollback is a complete revert
+of the cutover**, never a partial edit of the workflow: restoring only the old
+`build` job would leave `tests/test_docs_production_contract.py` (which
+asserts the Zensical workflow) failing. Use a reviewed pull request, or an
+explicitly authorised recovery action.
 
-1. In `.github/workflows/docs.yaml` restore the previous `build` job: install
-   `-r docs/requirements-docs.txt`, run `mkdocs build --strict`, upload `site`
-   with `actions/upload-pages-artifact@v3`. Leave `deploy` untouched.
-2. Optionally remove `docs/requirements-zensical.txt`,
-   `docs/requirements-docs-browser.txt` and the two checker scripts.
-   `theme.variant: classic` may stay: Material ignores it.
-3. Material's `requirements-docs.txt` stays pinned (`mkdocs-material>=9.5,<10`)
-   for exactly this purpose; Material for MkDocs reaches end of life on
-   2027-05-05.
+1. Find the cutover on `main`. The repository merges pull requests with merge
+   commits, so it is a `Merge pull request #89 ...` commit. Check its parents:
 
-The previous behaviour is also recoverable by reverting the cutover commit.
+   ```bash
+   git show --no-patch --format='%H%n%P' <merge-sha>
+   ```
+
+   The first parent is the tip of `main` before the merge (the mainline); the
+   second is the head of the pull-request branch.
+2. Branch from current `main` and revert the merge, selecting the mainline
+   parent explicitly:
+
+   ```bash
+   git switch -c revert-zensical-cutover origin/main
+   git revert -m 1 <merge-sha>
+   ```
+
+   `-m 1` keeps the first parent's side, i.e. it undoes everything the pull
+   request brought in. Without `-m`, git refuses to revert a merge.
+   For a squash-merged pull request use `git revert <squash-sha>`; for a
+   rebase-merged one revert the range of its commits (`git revert <first>^..<last>`).
+3. If later pull requests touched the same files the revert can conflict;
+   resolve each conflict towards the pre-cutover content of the workflow, the
+   two requirement files and the docs tests, then continue the revert.
+4. Verify before opening the pull request (do not rely on the Material build
+   alone):
+   - `git diff <pre-merge-main-sha> -- .github/workflows/docs.yaml docs/requirements-*.txt mkdocs.yml scripts tests`
+     is empty when nothing else changed those files;
+   - `mkdocs build --strict` succeeds;
+   - `pytest tests/test_docs_zensical_contract.py tests/test_docs_search_regression.py tests/test_ci_gate_contract.py`
+     passes with `zensical` and `mkdocs` on `PATH`.
+5. Open the pull request, let CI go green, and merge it. The `deploy` job
+   publishes the restored Material site on the next push to `main`.
+
+A revert restores the previous `deploy` condition as well, so a `v*` tag push
+could deploy again until the condition is reintroduced. To re-apply the
+cutover later, revert the revert (git does not re-merge a branch whose merge
+was reverted).
+
+This procedure was rehearsed in an isolated clone: a merge of the cutover into
+the pre-cutover baseline, reverted with `git revert -m 1`, produced a tree
+identical to the baseline, and the restored workflow and contract tests passed.

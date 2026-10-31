@@ -8,6 +8,7 @@ which case missing prerequisites are a failure.
 
 from __future__ import annotations
 
+import hashlib
 import importlib.util
 import json
 import os
@@ -167,3 +168,21 @@ def test_browser_check_fails_on_broken_copies(built_site, tmp_path, name):
     mutate(copy)
     problems = _check(copy)
     assert any(expected in p for p in problems), problems
+
+
+def test_search_self_test_never_modifies_the_checked_site(built_site):
+    def digest(root: Path) -> str:
+        h = hashlib.sha256()
+        for path in sorted(p for p in root.rglob("*") if p.is_file()):
+            h.update(path.relative_to(root).as_posix().encode())
+            h.update(hashlib.sha256(path.read_bytes()).digest())
+        return h.hexdigest()
+
+    before = digest(built_site)
+    try:
+        failures = search.self_test(built_site, search.TERM, 3000)
+    except search.BrowserUnavailable as exc:
+        _unavailable(str(exc))
+        return
+    assert failures == []
+    assert digest(built_site) == before

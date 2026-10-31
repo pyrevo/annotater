@@ -70,9 +70,10 @@ jobs:
   # Publication is gated on the repository variable DOCS_PUBLISH being
   # exactly "true": the workflow ships with the manual, but the site is
   # only activated (per the release decision) when the maintainer sets
-  # that variable on pyrevo/annotater.
+  # that variable on pyrevo/annotater. Only a push to refs/heads/main can
+  # deploy: pull requests and tag pushes build and verify but never publish.
   deploy:
-    if: github.event_name == 'push' && vars.DOCS_PUBLISH == 'true'
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.DOCS_PUBLISH == 'true'
     needs: build
     runs-on: ubuntu-latest
     environment:
