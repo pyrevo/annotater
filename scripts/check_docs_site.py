@@ -22,6 +22,7 @@ import argparse
 import difflib
 import html
 import json
+import os
 import posixpath
 import re
 import shutil
@@ -172,7 +173,30 @@ def check_links(site: Path) -> list[str]:
     return errors
 
 
+class SelfComparisonError(ValueError):
+    """--site and --reference are the same directory (a vacuous comparison)."""
+
+
+def refuse_self_comparison(site: Path, reference: Path) -> None:
+    """Comparing a site with itself proves nothing: refuse it, whatever the spelling.
+
+    Paths are compared after resolving relative segments and symlinks, and, when
+    both exist, with `os.path.samefile` (which also catches other aliases of one
+    directory).
+    """
+    same = site.resolve() == reference.resolve()
+    if not same and site.exists() and reference.exists():
+        same = os.path.samefile(site, reference)
+    if same:
+        raise SelfComparisonError(
+            f"--site ({site}) and --reference ({reference}) resolve to the same directory "
+            f"({site.resolve()}); comparing a site with itself proves nothing. "
+            "Pass a separately built reference site."
+        )
+
+
 def check(site: Path, reference: Path) -> list[str]:
+    refuse_self_comparison(site, reference)
     errors: list[str] = []
     expected = INVENTORY.read_text("utf-8").split()
     got = pages(site)
@@ -326,6 +350,7 @@ MUTATIONS: dict[str, tuple[Callable[[Path], None], str]] = {
 
 def self_test(site: Path, reference: Path) -> list[str]:
     """Each mutation, applied to an isolated copy of the site, must be detected."""
+    refuse_self_comparison(site, reference)
     failures: list[str] = []
     for name, (mutate, expected) in MUTATIONS.items():
         with tempfile.TemporaryDirectory(prefix="docs-site-mutation-") as tmp:
@@ -352,7 +377,11 @@ def main() -> int:
         return 0
     if args.reference is None:
         parser.error("--reference is required unless --write-inventory")
-    errors = check(args.site, args.reference)
+    try:
+        errors = check(args.site, args.reference)
+    except SelfComparisonError as exc:
+        print(f"FAIL {exc}", file=sys.stderr)
+        return 2
     for error in errors:
         print(f"FAIL {error}", file=sys.stderr)
     print(f"{len(pages(args.site))} pages checked, {len(errors)} problem(s)")

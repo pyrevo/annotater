@@ -51,6 +51,34 @@ SEARCH = 'python scripts/check_docs_search.py --site site --self-test --diagnost
 AUDITED = {INSTALL, CHROMIUM, REFERENCE, ZENSICAL_BUILD, STRUCTURAL, SEARCH}
 DIAGNOSTICS_PATH = "${{ runner.temp }}/search-diagnostics"
 
+# Allow-lists (F1/F2): the only step keys, jobs keys and actions the production
+# workflow may use, each with its exact expected configuration.
+WORKFLOW_KEYS = {"name", "on", "permissions", "concurrency", "jobs"}
+BUILD_JOB_KEYS = {"runs-on", "permissions", "steps"}
+DEPLOY_JOB_KEYS = {"if", "needs", "runs-on", "environment", "steps"}
+RUN_STEP_KEYS = {"name", "run", "env"}
+USES_STEP_KEYS = {"name", "uses", "with", "if"}
+DEPLOY_STEP_KEYS = {"name", "id", "uses"}
+REFERENCE_ENV = {"NO_MKDOCS_2_WARNING": "1"}
+CHECKOUT = "actions/checkout@v4"
+SETUP_PYTHON = "actions/setup-python@v5"
+UPLOAD_ARTIFACT = "actions/upload-artifact@v4"
+UPLOAD_PAGES = "actions/upload-pages-artifact@v3"
+DEPLOY_PAGES = "actions/deploy-pages@v4"
+DIAGNOSTICS_WITH = {
+    "name": "docs-search-diagnostics",
+    "path": DIAGNOSTICS_PATH,
+    "if-no-files-found": "ignore",
+    "retention-days": 7,
+}
+# uses -> (exact `with`, None meaning the step must have no `with`)
+ALLOWED_ACTIONS: dict[str, dict | None] = {
+    CHECKOUT: None,
+    SETUP_PYTHON: {"python-version": "3.12"},
+    UPLOAD_ARTIFACT: DIAGNOSTICS_WITH,
+    UPLOAD_PAGES: {"path": "site"},
+}
+
 _MASKING = re.compile(r"\|\||;|&&|\||\bset\s+\+e\b|\bexit\s+0\b|\btrue\b|\bcontinue\b")
 
 
@@ -88,9 +116,10 @@ def workflow_violations(wf: dict) -> list[str]:
         v.append(f"unexpected job set {sorted(jobs)}: only `build` and `deploy` may exist")
     if wf.get("permissions") != WORKFLOW_PERMISSIONS:
         v.append("workflow-level permissions changed")
-    for key in ("env", "defaults"):
-        if key in wf:
-            v.append(f"workflow-level `{key}` is not allowed (it can bypass the verification environment)")
+    for key in sorted(set(wf) - WORKFLOW_KEYS - {True}):
+        v.append(f"unexpected workflow-level key: workflow-level `{key}` is not allowed")
+    if wf.get("concurrency") != {"group": "pages", "cancel-in-progress": False}:
+        v.append("workflow concurrency changed")
     triggers = wf.get("on", wf.get(True)) or {}
     if "pull_request" not in triggers or triggers.get("push", {}).get("branches") != ["main"]:
         v.append("triggers must include pull_request and push to main")
@@ -99,9 +128,10 @@ def workflow_violations(wf: dict) -> list[str]:
     steps = build.get("steps", [])
     if build.get("permissions") != {"contents": "read"}:
         v.append("build job permissions must be exactly contents: read")
-    for key in ("if", "needs", "env", "defaults", "strategy", "container", "services"):
-        if key in build:
-            v.append(f"build job must not set `{key}`")
+    for key in sorted(set(build) - BUILD_JOB_KEYS):
+        v.append(f"unexpected build job key: build job must not set `{key}`")
+    if build.get("runs-on") != "ubuntu-latest":
+        v.append("build job must run on ubuntu-latest")
     if build.get("continue-on-error"):
         v.append("continue-on-error on the build job")
 
@@ -178,6 +208,29 @@ def workflow_violations(wf: dict) -> list[str]:
         if index is not None and "if" in steps[index]:
             v.append(f"conditional verification step {steps[index].get('name')!r}")
 
+    # --- F1: explicit allow-list of step keys (working-directory, timeout, id, ...) ---
+    for step in steps:
+        allowed = USES_STEP_KEYS if "uses" in step else RUN_STEP_KEYS
+        extra = sorted(set(step) - allowed)
+        if extra:
+            v.append(f"unexpected step key(s) {extra} in step {step.get('name') or _uses(step) or _cmd(step)!r}")
+        if "uses" in step and "run" in step:
+            v.append(f"step {step.get('name')!r} has both `uses` and `run`")
+
+    # --- F2: explicit allow-list of actions with their exact configuration ---
+    for step in steps:
+        uses = _uses(step)
+        if not uses:
+            continue
+        if uses not in ALLOWED_ACTIONS:
+            v.append(f"unexpected action {uses!r} in the build job")
+        elif step.get("with") != ALLOWED_ACTIONS[uses]:
+            v.append(f"unexpected inputs for action {uses!r}: {step.get('with')!r}")
+    if [i for i, s in enumerate(steps) if _uses(s) == CHECKOUT] != [0]:
+        v.append("exactly one checkout is required and it must be the first step")
+    if [i for i, s in enumerate(steps) if _uses(s) == SETUP_PYTHON] != [1]:
+        v.append("exactly one setup-python is required and it must be the second step")
+
     # --- the verified site is the uploaded site ----------------------------
     pages = [i for i, s in enumerate(steps) if _uses(s).startswith("actions/upload-pages-artifact@")]
     if len(pages) != 1:
@@ -230,10 +283,20 @@ def workflow_violations(wf: dict) -> list[str]:
     if deploy.get("continue-on-error"):
         v.append("continue-on-error on deploy")
     deploy_steps = deploy.get("steps", [])
-    if len(deploy_steps) != 1 or not _uses(deploy_steps[0]).startswith("actions/deploy-pages@"):
-        v.append("deploy must consist of the single actions/deploy-pages step")
-    if deploy.get("environment", {}).get("name") != "github-pages":
-        v.append("deploy must use the github-pages environment")
+    if len(deploy_steps) != 1 or _uses(deploy_steps[0]) != DEPLOY_PAGES:
+        v.append("deploy must consist of the single actions/deploy-pages step (exact action version)")
+    else:
+        step = deploy_steps[0]
+        if "with" in step:
+            v.append("deploy-pages must not take inputs")
+        if set(step) - DEPLOY_STEP_KEYS:
+            v.append(f"unexpected key(s) {sorted(set(step) - DEPLOY_STEP_KEYS)} on the deploy step")
+    for key in sorted(set(deploy) - DEPLOY_JOB_KEYS - {"permissions", "continue-on-error"}):
+        v.append(f"unexpected deploy job key `{key}`")
+    if deploy.get("runs-on") != "ubuntu-latest":
+        v.append("deploy must run on ubuntu-latest")
+    if deploy.get("environment") != {"name": "github-pages", "url": "${{ steps.deployment.outputs.page_url }}"}:
+        v.append("deploy must use the github-pages environment exactly as audited")
     return v
 
 
@@ -425,6 +488,38 @@ def _move_pages_before(needle: str) -> Callable[[dict], None]:
     return mutate
 
 
+def _nth(index: int) -> Callable[[dict], dict]:
+    return lambda wf: _build_steps(wf)[index]
+
+
+def _uses_of(index: int, value: str) -> Callable[[dict], None]:
+    def mutate(wf: dict) -> None:
+        _build_steps(wf)[index]["uses"] = value
+
+    return mutate
+
+
+def _swap_first_two(wf: dict) -> None:
+    steps = _build_steps(wf)
+    steps[0], steps[1] = steps[1], steps[0]
+
+
+def _deploy_step(wf: dict) -> dict:
+    return wf["jobs"]["deploy"]["steps"][0]
+
+
+def _deploy_env(wf: dict) -> dict:
+    return wf["jobs"]["deploy"]["environment"]
+
+
+def _diagnostics_with(**changes) -> Callable[[dict], None]:
+    def mutate(wf: dict) -> None:
+        step = _step("upload-artifact")(wf)
+        step["with"] = {**step["with"], **changes}
+
+    return mutate
+
+
 def _extra_job(wf: dict) -> None:
     wf["jobs"]["docs-zensical"] = {
         "runs-on": "ubuntu-latest",
@@ -500,6 +595,64 @@ MUTATIONS: dict[str, tuple[Callable[[dict], None], str]] = {
     "browser self-test dropped": (_replace_in("check_docs_search.py", " --self-test", ""), "browser search regression must run"),
     "structural self-test dropped": (_replace_in("check_docs_site.py", " --self-test", ""), "structural check must run with --self-test"),
     "browser check runs on another directory": (_replace_in("check_docs_search.py", "--site site", "--site other-site"), "browser search regression must run"),
+    # --- F1: step-key allow-list ---
+    "working-directory on the browser check": (_set(_step("check_docs_search.py"), "working-directory", "/tmp"), "unexpected step key"),
+    "working-directory on the structural check": (_set(_step("check_docs_site.py"), "working-directory", "/tmp"), "unexpected step key"),
+    "working-directory on the Zensical build": (_set(_step("zensical build"), "working-directory", "docs"), "unexpected step key"),
+    "working-directory on the Material reference build": (_set(_step("mkdocs build"), "working-directory", "docs"), "unexpected step key"),
+    "working-directory on the Chromium install": (_set(_step("playwright install"), "working-directory", "/tmp"), "unexpected step key"),
+    "working-directory on the pinned install": (_set(_step("pip install"), "working-directory", "/tmp"), "unexpected step key"),
+    "working-directory on the Pages upload": (_set(_step("upload-pages-artifact"), "working-directory", "/tmp"), "unexpected step key"),
+    "working-directory on the checkout": (_set(_nth(0), "working-directory", "/tmp"), "unexpected step key"),
+    "timeout-minutes on the browser check": (_set(_step("check_docs_search.py"), "timeout-minutes", 1), "unexpected step key"),
+    "timeout-minutes on the structural check": (_set(_step("check_docs_site.py"), "timeout-minutes", 1), "unexpected step key"),
+    "job-level timeout-minutes": (_set(_build, "timeout-minutes", 1), "unexpected build job key"),
+    "job-level defaults (working directory)": (_set(_build, "defaults", {"run": {"working-directory": "/tmp"}}), "unexpected build job key"),
+    "step id added to the browser check": (_set(_step("check_docs_search.py"), "id", "search"), "unexpected step key"),
+    "run step also carrying `uses`": (_set(_step("check_docs_search.py"), "uses", "actions/checkout@v4"), "has both `uses` and `run`"),
+    "reference step environment value changed": (_set(_step("mkdocs build"), "env", {"NO_MKDOCS_2_WARNING": "0"}), "unexpected step environment"),
+    "extra variable on the reference step environment": (_set(_step("mkdocs build"), "env", {"NO_MKDOCS_2_WARNING": "1", "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "1"}), "unexpected step environment"),
+    "diagnostics condition changed to always()": (_set(_step("upload-artifact"), "if", "always()"), "only the failure-diagnostics upload may be conditional"),
+    "diagnostics retention changed": (_diagnostics_with(**{"retention-days": 90}), "unexpected inputs"),
+    "diagnostics name changed to github-pages": (_diagnostics_with(name="github-pages"), "unexpected inputs"),
+    "diagnostics given an extra input": (_diagnostics_with(**{"overwrite": True}), "unexpected inputs"),
+    # --- F2: action allow-list ---
+    "checkout from another ref": (_set(_nth(0), "with", {"ref": "refs/heads/other"}), "unexpected inputs for action 'actions/checkout@v4'"),
+    "checkout of another repository": (_set(_nth(0), "with", {"repository": "someone/docs"}), "unexpected inputs for action 'actions/checkout@v4'"),
+    "checkout with a different fetch depth": (_set(_nth(0), "with", {"fetch-depth": 0}), "unexpected inputs for action 'actions/checkout@v4'"),
+    "checkout with a token": (_set(_nth(0), "with", {"token": "${{ secrets.GITHUB_TOKEN }}"}), "unexpected inputs for action 'actions/checkout@v4'"),
+    "checkout pinned to an older major": (_uses_of(0, "actions/checkout@v3"), "unexpected action"),
+    "checkout floating on main": (_uses_of(0, "actions/checkout@main"), "unexpected action"),
+    "checkout replaced by a fork action": (_uses_of(0, "someone/checkout@v4"), "unexpected action"),
+    "second checkout added": (_append({"uses": CHECKOUT}), "exactly one checkout"),
+    "checkout no longer first": (_swap_first_two, "exactly one checkout"),
+    "setup-python older major": (_uses_of(1, "actions/setup-python@v4"), "unexpected action"),
+    "setup-python floating on main": (_uses_of(1, "actions/setup-python@main"), "unexpected action"),
+    "setup-python with another Python version": (_set(_nth(1), "with", {"python-version": "3.9"}), "unexpected inputs for action 'actions/setup-python@v5'"),
+    "setup-python with a pip cache": (_set(_nth(1), "with", {"python-version": "3.12", "cache": "pip"}), "unexpected inputs for action 'actions/setup-python@v5'"),
+    "setup-python with an extra input": (_set(_nth(1), "with", {"python-version": "3.12", "pip-install": "zensical"}), "unexpected inputs for action 'actions/setup-python@v5'"),
+    "setup-python without inputs": (_set(_nth(1), "with", _DELETE), "unexpected inputs for action 'actions/setup-python@v5'"),
+    "setup-uv action added": (_insert_after("setup-python", {"uses": "astral-sh/setup-uv@v5"}), "unexpected action"),
+    "setup-node action added": (_insert_after("setup-python", {"uses": "actions/setup-node@v4"}), "unexpected action"),
+    "pip-install action added": (_insert_after("setup-python", {"uses": "BSFishy/pip-action@v1", "with": {"packages": "zensical"}}), "unexpected action"),
+    "cache action added": (_insert_after("setup-python", {"uses": "actions/cache@v4", "with": {"path": "site", "key": "k"}}), "unexpected action"),
+    "docker action step added": (_insert_after("setup-python", {"uses": "docker://alpine:3"}), "unexpected action"),
+    "local action step added": (_insert_after("setup-python", {"uses": "./.github/actions/anything"}), "unexpected action"),
+    "Pages artifact action on an older version": (_uses_of(-1, "actions/upload-pages-artifact@v2"), "unexpected action"),
+    "Pages artifact action from a fork": (_uses_of(-1, "someone/upload-pages-artifact@v3"), "unexpected action"),
+    "extra Pages artifact upload of another directory": (_append({"uses": "actions/upload-pages-artifact@v3", "with": {"path": "material-reference"}}), "exactly one Pages artifact upload"),
+    "extra upload-artifact action": (_append({"uses": "actions/upload-artifact@v4", "with": {"name": "x", "path": "site"}}), "unexpected inputs"),
+    "deploy-pages on an older version": (_set(_deploy_step, "uses", "actions/deploy-pages@v3"), "single actions/deploy-pages step"),
+    "deploy-pages floating on main": (_set(_deploy_step, "uses", "actions/deploy-pages@main"), "single actions/deploy-pages step"),
+    "deploy-pages given inputs": (_set(_deploy_step, "with", {"artifact_name": "other"}), "deploy-pages must not take inputs"),
+    "deploy step with a working directory": (_set(_deploy_step, "working-directory", "/tmp"), "unexpected key(s)"),
+    "checkout added to the deploy job": (lambda wf: _deploy(wf)["steps"].insert(0, {"uses": CHECKOUT}), "single actions/deploy-pages step"),
+    "deploy job timeout added": (_set(_deploy, "timeout-minutes", 1), "unexpected deploy job key"),
+    "deploy environment renamed": (_set(_deploy_env, "name", "production"), "github-pages environment exactly as audited"),
+    "deploy environment url dropped": (_set(_deploy_env, "url", _DELETE), "github-pages environment exactly as audited"),
+    "deploy on another runner": (_set(_deploy, "runs-on", "self-hosted"), "deploy must run on ubuntu-latest"),
+    "build on another runner": (_set(_build, "runs-on", "self-hosted"), "build job must run on ubuntu-latest"),
+    "workflow concurrency changed": (_set(lambda wf: wf["concurrency"], "cancel-in-progress", True), "workflow concurrency changed"),
     # --- structural checker reference (R3) ---
     "structural check compares the site against itself": (
         _replace_in("check_docs_site.py", '--reference "$RUNNER_TEMP/material-reference"', "--reference site"),

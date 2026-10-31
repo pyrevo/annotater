@@ -178,6 +178,80 @@ def test_every_structural_mutation_names_a_distinct_expected_failure():
     assert len({expected for _, expected in checker.MUTATIONS.values()}) == len(checker.MUTATIONS)
 
 
+# --- F3: a site is never compared with itself ---------------------------------
+
+
+@pytest.fixture
+def one_page_inventory(tmp_path, monkeypatch):
+    inventory = tmp_path / "inventory.txt"
+    inventory.write_text("index.html\n")
+    monkeypatch.setattr(checker, "INVENTORY", inventory)
+
+
+def _run_main(monkeypatch, *args: str) -> int:
+    monkeypatch.setattr("sys.argv", ["check_docs_site.py", *args])
+    return checker.main()
+
+
+def test_identical_site_and_reference_paths_are_refused(tmp_path, monkeypatch, capsys, one_page_inventory):
+    site = _site(tmp_path / "site", {"index.html": "<h2 id='a'>x</h2>"}, {"items": [1]})
+    assert _run_main(monkeypatch, "--site", str(site), "--reference", str(site)) == 2
+    err = capsys.readouterr().err
+    assert "resolve to the same directory" in err and "proves nothing" in err
+    with pytest.raises(checker.SelfComparisonError):
+        checker.check(site, site)
+    with pytest.raises(checker.SelfComparisonError):
+        checker.self_test(site, site)
+
+
+def test_equivalent_relative_and_absolute_spellings_are_refused(tmp_path, monkeypatch, capsys, one_page_inventory):
+    _site(tmp_path / "site", {"index.html": "<h2 id='a'>x</h2>"}, {"items": [1]})
+    monkeypatch.chdir(tmp_path)
+    absolute = str((tmp_path / "site").resolve())
+    for site, reference in (
+        ("site", absolute),
+        (absolute, "site"),
+        ("site", "./site"),
+        ("site", "site/"),
+        ("site", "site/../site"),
+        ("./site/../site", absolute + "/."),
+    ):
+        assert _run_main(monkeypatch, "--site", site, "--reference", reference) == 2, (site, reference)
+        assert "resolve to the same directory" in capsys.readouterr().err
+
+
+def test_symlink_alias_of_the_site_is_refused(tmp_path, monkeypatch, capsys, one_page_inventory):
+    site = _site(tmp_path / "site", {"index.html": "<h2 id='a'>x</h2>"}, {"items": [1]})
+    alias = tmp_path / "alias"
+    try:
+        alias.symlink_to(site, target_is_directory=True)
+    except (OSError, NotImplementedError) as exc:
+        pytest.skip(f"symlinks are not supported here: {exc}")
+    assert _run_main(monkeypatch, "--site", str(alias), "--reference", str(site)) == 2
+    assert _run_main(monkeypatch, "--site", str(site), "--reference", str(alias)) == 2
+    chained = tmp_path / "chained"
+    chained.symlink_to(alias, target_is_directory=True)
+    assert _run_main(monkeypatch, "--site", str(chained), "--reference", str(site)) == 2
+    assert capsys.readouterr().err.count("resolve to the same directory") == 3
+
+
+def test_distinct_site_and_reference_directories_are_compared(tmp_path, monkeypatch, capsys, one_page_inventory):
+    site = _site(tmp_path / "site", {"index.html": "<h2 id='a'>Hello</h2>"}, {"items": [1]})
+    reference = _site(tmp_path / "reference", {"index.html": "<h2 id='a'>Hello</h2>"})
+    assert _run_main(monkeypatch, "--site", str(site), "--reference", str(reference)) == 0
+    assert "1 pages checked, 0 problem(s)" in capsys.readouterr().out
+    # distinct directories with a real difference are compared (and fail), not refused
+    different = _site(tmp_path / "different", {"index.html": "<h2 id='a'>Changed</h2>"})
+    assert _run_main(monkeypatch, "--site", str(site), "--reference", str(different)) == 1
+    assert "article text differs" in capsys.readouterr().err
+    assert checker.refuse_self_comparison(site, reference) is None
+
+
+def test_missing_reference_directory_is_not_mistaken_for_the_site(tmp_path, one_page_inventory):
+    site = _site(tmp_path / "site", {"index.html": "<h2 id='a'>x</h2>"}, {"items": [1]})
+    assert checker.refuse_self_comparison(site, tmp_path / "does-not-exist") is None
+
+
 # --- real builds (skipped with a reason when the builders are absent) -------
 
 
