@@ -1,4 +1,5 @@
-# Experimental Zensical documentation build (parallel to the Material for
-# MkDocs build in requirements-docs.txt; it does not replace it). Pinned to
-# the version audited in M3.1a. Used only by the `docs-zensical` CI job.
+# Production documentation builder: Zensical (theme.variant: classic in
+# mkdocs.yml). Pinned to the version audited in M3.1a and exercised by the
+# `build` job of .github/workflows/docs.yaml. Zensical is 0.0.x; bump only
+# after the structural and browser checks pass on the new version.
 zensical==0.0.73
