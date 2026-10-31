@@ -1747,3 +1747,72 @@ git-ignored. Untracked local-only items left untouched (reported):
 `annotater-review_PR.zip` (review export, `*.zip` ignored), `.venv/`,
 `__pycache__/`, `.pytest_cache/`, `.DS_Store`. No secrets/credentials
 found in tracked content. No obsolete tracked ZIPs or test outputs.
+
+## Documentation site build (Zensical Classic)
+
+This note is developer-facing and is excluded from the published site
+(`exclude_docs` in `mkdocs.yml`).
+
+### Architecture
+
+The `build` job of `.github/workflows/docs.yaml` is the production
+documentation build. In order, it:
+
+1. installs the pinned Zensical (`docs/requirements-zensical.txt`,
+   `zensical==0.0.73`), the Material for MkDocs reference
+   (`docs/requirements-docs.txt`) and Playwright
+   (`docs/requirements-docs-browser.txt`), then Chromium;
+2. builds a **Material reference site** into `$RUNNER_TEMP` (verification
+   only; it is never uploaded or published);
+3. builds the site with `zensical build --clean --strict` into `site/`
+   (`theme.variant: classic` in `mkdocs.yml`);
+4. runs `scripts/check_docs_site.py --self-test` on `site/` against the
+   reference: exact 46-page inventory, internal links and anchors, content
+   anchors, article text, navigation structure and order, canonical URLs,
+   sitemap URLs, the Classic stylesheet, and a populated `search.json`;
+5. runs `scripts/check_docs_search.py --self-test`: real Chromium over HTTP
+   on desktop (mouse and keyboard) and mobile, searching a known term,
+   opening a result;
+6. only then uploads `site/` with `actions/upload-pages-artifact`.
+
+The `--self-test` options apply deliberate breakages to isolated copies and
+fail the job if any of them goes undetected. A missing Playwright or Chromium
+fails the job (exit status 2). The `deploy` job is unchanged: it needs `build`
+and runs only for pushes with `DOCS_PUBLISH == 'true'`. The former
+experimental `docs-zensical` job and its `zensical-site` review artifact were
+folded into `build` to avoid building twice.
+
+### Intentional differences from Material for MkDocs
+
+Not byte-identical; the structural check compares what readers and links
+depend on, not the markup.
+
+- Search index path: `/search.json` (was `/search/search_index.json`).
+- `sitemap.xml.gz` is no longer generated (`sitemap.xml` is, with the same URLs).
+- Search is a dialog (Ctrl/Cmd+K), results are more granular, and the search
+  interface is English-only (Zensical does not localize it yet).
+- The table-of-contents heading reads "On this page" instead of "Table of
+  contents".
+- Fenced code blocks nested in 3-space-indented list items render as real code
+  blocks (Material rendered them as inline code with the language word leaked
+  into the text); the checker tolerates exactly that difference on two pages.
+- Zensical is a `0.0.x` release; pin it and bump deliberately.
+- `file://` is not supported for search (the `offline` plugin would rewrite
+  every URL to `*.html`); preview with `python -m http.server -d site`.
+
+### Rollback
+
+Use a reviewed pull request (or an explicitly authorised recovery action);
+no documentation content changes are needed:
+
+1. In `.github/workflows/docs.yaml` restore the previous `build` job: install
+   `-r docs/requirements-docs.txt`, run `mkdocs build --strict`, upload `site`
+   with `actions/upload-pages-artifact@v3`. Leave `deploy` untouched.
+2. Optionally remove `docs/requirements-zensical.txt`,
+   `docs/requirements-docs-browser.txt` and the two checker scripts.
+   `theme.variant: classic` may stay: Material ignores it.
+3. Material's `requirements-docs.txt` stays pinned (`mkdocs-material>=9.5,<10`)
+   for exactly this purpose; Material for MkDocs reaches end of life on
+   2027-05-05.
+
+The previous behaviour is also recoverable by reverting the cutover commit.

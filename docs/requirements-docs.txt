@@ -1,3 +1,7 @@
-# Documentation build dependencies (MkDocs site only; not needed to run
-# or test the application).
+# Material for MkDocs: the reference build used by the structural checker
+# (scripts/check_docs_site.py) and the rollback builder. It is NOT the
+# production site builder any more (that is Zensical, see
+# docs/requirements-zensical.txt) and is never published. Not needed to run
+# or test the application. Material for MkDocs reaches end of life on
+# 2027-05-05.
 mkdocs-material>=9.5,<10

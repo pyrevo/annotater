@@ -1,35 +1,31 @@
-"""Contract for the experimental parallel Zensical documentation build (M3.1b).
+"""Contract for the Zensical documentation build: pins, config, inventory, checker.
 
-Static checks pin the workflow/dependency/config guarantees (the Material build
-and Pages deployment are untouched; the Zensical job never publishes). The
-checker's own behaviour is exercised on tiny synthetic sites. A real-build test
-runs when both builders are installed and is skipped, with the reason, if not.
+Static checks pin the dependency and configuration guarantees; the workflow
+guards live in test_docs_production_contract.py. The checker's own behaviour is
+exercised on tiny synthetic sites. Real-build tests run when both builders are
+installed and are skipped, with the reason, if not (DOCS_SEARCH_REQUIRE_BROWSER=1
+turns that skip into a failure).
 """
 
 from __future__ import annotations
 
 import importlib.util
 import json
+import os
 import re
 import shutil
 import subprocess
 from pathlib import Path
 
 import pytest
-import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
-WORKFLOW = ROOT / ".github" / "workflows" / "docs.yaml"
 CHECKER = ROOT / "scripts" / "check_docs_site.py"
 INVENTORY = ROOT / "tests" / "fixtures" / "docs_site_pages.txt"
 
 _spec = importlib.util.spec_from_file_location("check_docs_site", CHECKER)
 checker = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(checker)
-
-
-def _jobs() -> dict:
-    return yaml.safe_load(WORKFLOW.read_text("utf-8"))["jobs"]
 
 
 # --- static contract -------------------------------------------------------
@@ -46,37 +42,6 @@ def test_zensical_requirements_are_pinned_and_material_is_kept():
 def test_mkdocs_config_sets_classic_variant_and_nothing_else_in_theme():
     config = (ROOT / "mkdocs.yml").read_text("utf-8")
     assert re.search(r"^theme:\n  name: material\n(?:  #.*\n)*  variant: classic\n", config, re.M)
-
-
-def test_material_build_and_deploy_jobs_are_unchanged():
-    jobs = _jobs()
-    assert set(jobs) == {"build", "deploy", "docs-zensical"}
-    build_runs = [s.get("run") for s in jobs["build"]["steps"]]
-    assert "mkdocs build --strict" in build_runs
-    assert jobs["deploy"]["needs"] == "build"
-    assert jobs["deploy"]["if"] == "github.event_name == 'push' && vars.DOCS_PUBLISH == 'true'"
-
-
-def test_zensical_job_is_pr_only_unprivileged_and_never_publishes():
-    jobs = _jobs()
-    job = jobs["docs-zensical"]
-    assert job["if"] == "github.event_name == 'pull_request'"
-    assert job["permissions"] == {"contents": "read"}
-    uses = [s.get("uses", "") for s in job["steps"]]
-    assert not any("pages" in u for u in uses)
-    assert any(u.startswith("actions/upload-artifact@") for u in uses)
-    assert "environment" not in job
-    runs = " ".join(s.get("run", "") for s in job["steps"])
-    assert "zensical build --clean --strict" in runs
-    assert "requirements-zensical.txt" in runs
-    for name, other in jobs.items():
-        assert "docs-zensical" not in str(other.get("needs", "")), name
-
-
-def test_zensical_job_is_not_an_application_ci_gate_dependency():
-    gate = yaml.safe_load((ROOT / ".github" / "workflows" / "python-tests.yml").read_text("utf-8"))
-    needs = gate["jobs"]["ci-gate"]["needs"]
-    assert "docs-zensical" not in needs
 
 
 def test_pinned_inventory_is_46_unique_sorted_pages():
@@ -99,7 +64,11 @@ def test_inventory_covers_every_nav_page():
 
 
 def _page(body: str) -> str:
-    return f"<html><body><article>{body}</article></body></html>"
+    return (
+        '<html><head><link rel="canonical" href="https://e.org/">'
+        '<link rel="stylesheet" href="assets/stylesheets/classic/main.css"></head>'
+        f"<body><article>{body}</article></body></html>"
+    )
 
 
 def _site(root: Path, pages: dict[str, str], search: object = None) -> Path:
@@ -107,6 +76,7 @@ def _site(root: Path, pages: dict[str, str], search: object = None) -> Path:
         path = root / name
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(_page(body), "utf-8")
+    (root / "sitemap.xml").write_text("<urlset><url><loc>https://e.org/</loc></url></urlset>", "utf-8")
     if search is not None:
         (root / "search.json").write_text(json.dumps(search), "utf-8")
     return root
@@ -179,22 +149,70 @@ def test_check_flags_inventory_text_anchor_and_search_regressions(tmp_path, monk
     assert any("search.json unreadable" in e for e in checker.check(missing, ref))
 
 
+def test_navigation_parser_keeps_order_targets_and_labels():
+    page = (
+        '<nav class="md-nav md-nav--primary"><ul>'
+        '<li><a href="../a/" class="md-nav__link"><span> Alpha </span></a></li>'
+        '<li><nav class="md-nav"><a href="#frag" class="md-nav__link">Frag</a></nav></li>'
+        '<li><a href="../b/" class="md-nav__link">Beta</a></li></ul></nav>'
+        '<nav class="md-nav md-nav--secondary"><a href="x/" class="md-nav__link">Other</a></nav>'
+    )
+    assert checker.navigation(page, "docs/page/index.html") == [
+        ("/docs/a", "Alpha"),
+        ("/docs/page#frag", "Frag"),
+        ("/docs/b", "Beta"),
+    ]
+
+
+def test_canonical_and_sitemap_helpers(tmp_path):
+    assert checker.canonical('<link rel="canonical" href="https://e.org/a/">') == ["https://e.org/a/"]
+    assert checker.canonical("<p>none</p>") == []
+    (tmp_path / "sitemap.xml").write_text("<urlset><url><loc>b</loc></url><url><loc>a</loc></url></urlset>")
+    assert checker.sitemap_urls(tmp_path) == ["a", "b"]
+    assert checker.sitemap_urls(tmp_path / "missing") == []
+
+
+def test_every_structural_mutation_names_a_distinct_expected_failure():
+    assert len(checker.MUTATIONS) == 9
+    assert len({expected for _, expected in checker.MUTATIONS.values()}) == len(checker.MUTATIONS)
+
+
 # --- real builds (skipped with a reason when the builders are absent) -------
 
 
-@pytest.mark.skipif(
-    shutil.which("zensical") is None or shutil.which("mkdocs") is None,
-    reason="zensical and mkdocs (docs/requirements-*.txt) are not installed",
-)
-def test_real_zensical_build_matches_material_reference(tmp_path):
-    env_site = tmp_path / "zensical-site"
-    material_site = tmp_path / "material-site"
-    env = {"NO_MKDOCS_2_WARNING": "1", "PATH": __import__("os").environ["PATH"], "HOME": str(tmp_path)}
+def _unavailable(reason: str):
+    if os.environ.get("DOCS_SEARCH_REQUIRE_BROWSER") == "1":
+        pytest.fail(f"DOCS_SEARCH_REQUIRE_BROWSER=1 but: {reason}")
+    pytest.skip(reason)
+
+
+@pytest.fixture(scope="module")
+def built_sites(tmp_path_factory):
+    if shutil.which("zensical") is None or shutil.which("mkdocs") is None:
+        _unavailable("zensical and mkdocs (docs/requirements-*.txt) are not installed")
+    base = tmp_path_factory.mktemp("docs-sites")
+    env = {**os.environ, "NO_MKDOCS_2_WARNING": "1"}
+    material_site = base / "material-site"
     subprocess.run(["mkdocs", "build", "--strict", "-d", str(material_site)], cwd=ROOT, env=env, check=True)
     # Zensical writes to site_dir (site/); build from a copy so the repo stays clean.
-    work = tmp_path / "src"
+    work = base / "src"
     shutil.copytree(ROOT / "docs", work / "docs")
     shutil.copy(ROOT / "mkdocs.yml", work / "mkdocs.yml")
     subprocess.run(["zensical", "build", "--clean", "--strict"], cwd=work, env=env, check=True)
-    shutil.move(str(work / "site"), env_site)
-    assert checker.check(env_site, material_site) == []
+    return work / "site", material_site
+
+
+def test_real_zensical_build_matches_material_reference(built_sites):
+    site, material_site = built_sites
+    assert checker.check(site, material_site) == []
+
+
+@pytest.mark.parametrize("name", list(checker.MUTATIONS))
+def test_structural_gate_fails_on_broken_copies_of_the_real_site(built_sites, tmp_path, name):
+    site, material_site = built_sites
+    mutate, expected = checker.MUTATIONS[name]
+    copy = tmp_path / "site"
+    shutil.copytree(site, copy)
+    mutate(copy)
+    problems = checker.check(copy, material_site)
+    assert any(expected in p for p in problems), problems

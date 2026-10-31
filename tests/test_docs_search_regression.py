@@ -1,4 +1,4 @@
-"""Contract for the HTTP browser search regression of the Zensical build (M3.1d).
+"""Contract for the HTTP browser search regression of the Zensical build.
 
 Static and harness tests always run. The real-browser tests need Playwright with
 Chromium and the pinned Zensical; when those are absent they are *skipped with a
@@ -20,10 +20,8 @@ import urllib.request
 from pathlib import Path
 
 import pytest
-import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
-WORKFLOW = ROOT / ".github" / "workflows" / "docs.yaml"
 SCRIPT = ROOT / "scripts" / "check_docs_search.py"
 
 _spec = importlib.util.spec_from_file_location("check_docs_search", SCRIPT)
@@ -32,10 +30,6 @@ sys.modules[_spec.name] = search  # dataclasses resolve their module through sys
 _spec.loader.exec_module(search)
 
 REQUIRE = os.environ.get("DOCS_SEARCH_REQUIRE_BROWSER") == "1"
-
-
-def _jobs() -> dict:
-    return yaml.safe_load(WORKFLOW.read_text("utf-8"))["jobs"]
 
 
 # --- static contract --------------------------------------------------------
@@ -49,47 +43,6 @@ def test_browser_dependency_is_pinned_and_separate():
     assert len(lines) == 1 and re.fullmatch(r"playwright==\d+\.\d+\.\d+", lines[0])
     zensical = (ROOT / "docs" / "requirements-zensical.txt").read_text("utf-8")
     assert "playwright" not in zensical and "zensical==0.0.73" in zensical
-
-
-def test_zensical_job_runs_the_browser_check_and_still_never_publishes():
-    jobs = _jobs()
-    assert set(jobs) == {"build", "deploy", "docs-zensical"}
-    job = jobs["docs-zensical"]
-    runs = [s.get("run", "") for s in job["steps"]]
-    joined = "\n".join(runs)
-    assert "python -m playwright install --with-deps chromium" in joined
-    assert "requirements-docs-browser.txt" in joined
-    browser = next(r for r in runs if "check_docs_search.py" in r)
-    assert "--site site" in browser and "--self-test" in browser
-    # The structural check and the strict Zensical build are kept, and come first.
-    assert "check_docs_site.py" in joined and "zensical build --clean --strict" in joined
-    assert joined.index("check_docs_site.py") < joined.index("check_docs_search.py")
-    # No publishing surface was added.
-    assert job["permissions"] == {"contents": "read"}
-    assert job["if"] == "github.event_name == 'pull_request'"
-    assert "environment" not in job
-    uses = [s.get("uses", "") for s in job["steps"]]
-    assert not any("pages" in u for u in uses)
-    diagnostics = next(s for s in job["steps"] if s.get("with", {}).get("name") == "zensical-search-diagnostics")
-    assert diagnostics["if"] == "failure()"
-    assert jobs["deploy"]["needs"] == "build"
-    for name, other in jobs.items():
-        assert "docs-zensical" not in str(other.get("needs", "")), name
-
-
-def test_zensical_job_is_not_an_application_gate_dependency():
-    gate = yaml.safe_load((ROOT / ".github" / "workflows" / "python-tests.yml").read_text("utf-8"))
-    assert "docs-zensical" not in gate["jobs"]["ci-gate"]["needs"]
-
-
-def test_material_jobs_and_zensical_pin_are_unchanged():
-    jobs = _jobs()
-    assert "mkdocs build --strict" in [s.get("run") for s in jobs["build"]["steps"]]
-    assert jobs["deploy"]["if"] == "github.event_name == 'push' && vars.DOCS_PUBLISH == 'true'"
-    config = (ROOT / "mkdocs.yml").read_text("utf-8")
-    assert "variant: classic" in config
-    assert not re.search(r"^\s*-\s*offline\b", config, re.M)
-    assert "use_directory_urls" not in config
 
 
 def test_script_uses_roles_not_material_selectors_and_no_fixed_sleeps():
