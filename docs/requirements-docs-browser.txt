@@ -1,0 +1,5 @@
+# Browser-test dependency for the experimental Zensical search regression
+# (scripts/check_docs_search.py). Used only by the `docs-zensical` CI job.
+# The Playwright version fixes the Chromium build that
+# `python -m playwright install chromium` downloads.
+playwright==1.64.0
